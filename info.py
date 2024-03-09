@@ -1,7 +1,7 @@
-API_ID       = 29942004
-API_HASH     = "ad92f01e4a90cddebbea0ad16fa23026"
-BOT_TOKEN    = "6765313019:AAGYzdlzJ-w5TNM9npSbBg4sGyX-44K5uHA"
-SESSION      = "BQHI4PQAj44gGq6fA82kUkixQ3wb9i7yY_YRevL9DDnrzKfP4EqGNZhk-wB26felak-ODJ5qokBcVp9UwLzjM4Pe5nEK2-HxpDMIAGsmIo8H4K1YnpygfYNoz2CrDJ4zPbvLkygXTywAxHJMP6wGdKlhzu97SAbEpuIfxhBX2Zxtud0kR61FcfnRVAfYzSpgI6vMxtp-7zycekU2iU4lgvdWmsYptmdgXDRnKgugUvCt8dQ8V7xgV2wsZW7r_bDKHsy9AY5_a9n1TQCS6A7lZtlfazbBpeOySX6c2YadVS-W2358VIhdtuBx9SVFvdXY2NOIL_kFVBOXH7OT_5rqJ4fXjcPstwAAAABkI-HqAA"
-DATABASE_URI = "mongodb+srv://jnanesh:jnanesh@cluster0.8pzxa6s.mongodb.net/?retryWrites=true&w=majority"
+API_ID       = 19937650
+API_HASH     = "6a6df8006df3cb56edce33056d37baca"
+BOT_TOKEN    = "6765313019:AAHYMI7W7VZbq5iqm_pPlnlN0_P8wbFjK1s"
+SESSION      = "BAEwOXIAJDDNpZakygWCdIesqopLhu6k57G25HFrWvhZyGIN8gsTbUs76EjXDZv3A5wMf9o9yjOlWt75XevnUs0UOvs9I_h8iJLX0PeY7u0WI5qWWHcNhUbB6P3P2sS3LJ7-E8I2gWqvPx02Lq2ntKvtIY-YeFc3gEsfaenU-0GGbuCyxWd7SBZXiPzCOFpFuGx-Mk8BW0ZXb2DbQqh1590U3ctGhkOtNnDnYx5DFRgP-GeIva27vbCtLW4aP_Nhwg1fABaRaNb6dYeL5kLtMnVgkO6X_r_55ap4QKqwezAb6UXBSkycAqKewBx3GtLIu_FMhbYRf2USWWAtCuVG-ClMuigY2QAAAAGnLbV2AA"
+DATABASE_URI = "mongodb+srv://ottmovies:ottmovies@cluster0.bejrjkt.mongodb.net/?retryWrites=true&w=majority"
 LOG_CHANNEL  = -1001997863812
 ADMIN        = 7099757942
