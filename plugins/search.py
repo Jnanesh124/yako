@@ -17,7 +17,7 @@ async def search(bot, message):
     if message.text.startswith("/"):
        return    
     query   = message.text 
-    head    = "<u>Here is the results 👇\n\nPowered By </u> <b><I>@CyniteBackup</I></b>\n\n"
+    head    = "<u>👇 𝐓𝐡𝐢𝐬 𝐢𝐬 𝐓𝐡𝐞 𝐌𝐨𝐯𝐢𝐞 𝐀𝐯𝐚𝐢𝐥𝐚𝐛𝐥𝐞 𝐑𝐞𝐢𝐠𝐡𝐭 𝐊𝐧𝐨𝐰 👇</u>\n\n"
     results = ""
     try:
        for channel in channels:
@@ -25,7 +25,7 @@ async def search(bot, message):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b><I>♻️ {name}\n🔗 {msg.link}</I></b>\n\n"                                                      
+               results += f"<b>🍿 {name}\n🔗 {msg.link}</b>\n\n"                                                      
        if bool(results)==False:
           movies = await search_imdb(query)
           buttons = []
@@ -53,11 +53,11 @@ async def recheck(bot, update):
     if clicked != typed:
        return await update.answer("That's not for you! 👀", show_alert=True)
 
-    m=await update.message.edit("Searching..💥")
+    m=await update.message.edit("𝐒𝐞𝐚𝐫𝐜𝐡𝐢𝐧𝐠 𝐅𝐨𝐫 𝐔𝐫 𝐑𝐞𝐪𝐮𝐞𝐬𝐭𝐞𝐝 𝐌𝐨𝐯𝐢𝐞 𝐖𝐚𝐢𝐭 🔎")
     id      = update.data.split("_")[-1]
     query   = await search_imdb(id)
     channels = (await get_group(update.message.chat.id))["channels"]
-    head    = "<u>I Have Searched Movie With Wrong Spelling But Take care next time 👇\n\nPowered By </u> <b><I>@CyniteBackup</I></b>\n\n"
+    head    = "<u>👇 𝐓𝐡𝐢𝐬 𝐢𝐬 𝐓𝐡𝐞 𝐌𝐨𝐯𝐢𝐞 𝐀𝐯𝐚𝐢𝐥𝐚𝐛𝐥𝐞 𝐑𝐞𝐢𝐠𝐡𝐭 𝐊𝐧𝐨𝐰 👇</u>\n\n"
     results = ""
     try:
        for channel in channels:
@@ -65,9 +65,9 @@ async def recheck(bot, update):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b><I>♻️🍿 {name}</I></b>\n\n🔗 {msg.link}</I></b>\n\n"
+               results += f"<b>🍿 {name}</b>\n\n🔗 {msg.link}</b>\n\n"
        if bool(results)==False:          
-          return await update.message.edit("Still no results found! Please Request To Group Admin", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🎯 Request To Admin 🎯", callback_data=f"request_{id}")]]))
+          return await update.message.edit("<b>𝐍𝐨 𝐎𝐧𝐥𝐢𝐧𝐞 #𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 𝐅𝐨𝐮𝐧𝐝 𝐑𝐞𝐢𝐠𝐡𝐭 𝐊𝐧𝐨𝐰 🥺 𝐒𝐨 𝐆𝐞𝐭 𝐃𝐢𝐫𝐞𝐜𝐭 𝐅𝐢𝐥𝐞 📁 𝐀𝐬𝐤 𝐓𝐡𝐢𝐬 𝐌𝐨𝐯𝐢𝐞 𝐀𝐠𝐚𝐢𝐧 𝐢𝐧 𝐁𝐞𝐥𝐨𝐰 𝐁𝐨𝐭 𝐔 𝐆𝐞𝐭 𝐔𝐫 𝐌𝐨𝐯𝐢𝐞 𝐅𝐢𝐥𝐞</b>\n\n<b>ನೀನು ಕೇಳಿದ ಸಿನಿಮಾ 𝐎𝐧𝐥𝐢𝐧𝐞 #𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 ಲಭ್ಯ ಇಲ್ಲ ಇಗಿನ ಸಮಯ ದಲ್ಲಿ ಅದಕ್ಕೆ ನೆರ  𝐅𝐢𝐥𝐞 𝐁𝐞𝐥𝐨𝐰 𝐁𝐨𝐭 ಅಲ್ಲಿ ಮತ್ತೆ 𝐭𝐲𝐩𝐞 ಮಾಡಿ 𝐅𝐢𝐥𝐞 ಬರುತ್ತದೆ</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📁 Get Direct Movie File Here 📁", url=f"t.me/Rockers_ott_movie_link_bot")]]))
        await update.message.edit(text=head+results, disable_web_page_preview=True)
     except Exception as e:
        await update.message.edit(f"❌ Error: `{e}`")
