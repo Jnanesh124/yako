@@ -31,7 +31,7 @@ async def search(bot, message):
           buttons = []
           for movie in movies: 
               buttons.append([InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")])
-          msg = await message.reply("<b>𝐔 𝐭𝐲𝐩𝐞𝐝 𝐖𝐫𝐨𝐧𝐠 𝐒𝐩𝐞𝐥𝐥𝐢𝐧𝐠 𝐒𝐞𝐥𝐞𝐜𝐭 𝐁𝐞𝐥𝐨𝐰 𝐂𝐨𝐫𝐫𝐞𝐜𝐭 𝐌𝐨𝐯𝐢𝐞 𝐍𝐚𝐦𝐞</b>", reply_markup=InlineKeyboardMarkup(buttons))
+          msg = await message.reply("<b>only Type Movie Name 🤐</b>", reply_markup=InlineKeyboardMarkup(buttons))
        else:
           msg = await message.reply_text(text=head+results, disable_web_page_preview=True)
        _time = (int(time()) + (15*60))
