@@ -8,6 +8,9 @@ class script(object):
 👉 𝐒𝐩𝐞𝐥𝐥𝐢𝐧𝐠 𝐂𝐡𝐞𝐜𝐤 𝐓𝐨 𝐡𝐞𝐥𝐩 𝐭𝐨 𝐠𝐞𝐭 𝐜𝐨𝐫𝐫𝐞𝐜𝐭 𝐌𝐨𝐯𝐢𝐞 ✅
 👉 𝐯𝐞𝐫𝐲 𝐒𝐩𝐞𝐞𝐝 ✅
 
+💥 Subscribe my YouTube channel 
+link https://youtube.com/@Jnentertainment.?si=-xZOdUGBD3yxLjgW
+
  𝐈 𝐚𝐦 𝐓𝐨𝐭𝐚𝐥𝐥𝐲 𝐅𝐫𝐞𝐞 𝐍𝐨 𝐍𝐞𝐞𝐝 𝐓𝐨 𝐏𝐚𝐲✌"""
 
     HELP = """🫂 How To Connect And Use 🫂
