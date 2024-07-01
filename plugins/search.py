@@ -6,13 +6,6 @@ from client import User
 from pyrogram import Client, filters 
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
 
-async def delete_message(message, delay):
-    await asyncio.sleep(delay)
-    try:
-        await message.delete()
-    except Exception as e:
-        print(f"Error deleting message: {e}")
-
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
     f_sub = await force_sub(bot, message)
@@ -41,12 +34,10 @@ async def search(bot, message):
           msg = await message.reply("<b>only Type Movie Name 🤐</b>", reply_markup=InlineKeyboardMarkup(buttons))
        else:
           msg = await message.reply_text(text=head+results, disable_web_page_preview=True)
-       # Schedule message for deletion after 30 seconds
-        asyncio.create_task(delete_message(msg, 30))
-
-    except Exception as e:
-        await asyncio.sleep(30)  # Retry after 30 seconds on exception
-        await msg.delete()
+       _time = (int(time()) + (15*30))
+       await save_dlt_message(msg, _time)
+    except:
+       await asyncio.sleep(10)  
        
 
 
