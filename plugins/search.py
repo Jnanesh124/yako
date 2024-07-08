@@ -34,10 +34,8 @@ async def search(bot, message):
           msg = await message.reply("<b>only Type Movie Name 🤐</b>", reply_markup=InlineKeyboardMarkup(buttons))
        else:
           msg = await message.reply_text(text=head+results, disable_web_page_preview=True)
-       _time = (int(time()) + (15*30))
+       _time = (int(time()) + (1*60))
        await save_dlt_message(msg, _time)
-       await asyncio.sleep(10)  # Wait for 10 seconds
-       await message.delete()
     except:  
         pass
        
