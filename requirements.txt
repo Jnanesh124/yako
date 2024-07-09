@@ -1,4 +1,4 @@
-pyrogram
+Pyrofork
 tgcrypto
 motor[srv] 
 cinemagoer
