@@ -5,4 +5,3 @@ cinemagoer
 aiohttp
 aiofiles
 asyncio
-pip install isort autoflake
