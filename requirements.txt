@@ -5,6 +5,5 @@ cinemagoer
 aiohttp
 aiofiles
 asyncio
-isort==5.10.2
 autoflake==1.5.0
 
