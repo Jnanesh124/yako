@@ -19,7 +19,7 @@ async def search(bot, message):
        return
 
     query = message.text
-    head = "<strong> 👀 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 👀</strong>\n\n"
+    head = "👀 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 👀\n\n"
     results = ""
 
     try:
