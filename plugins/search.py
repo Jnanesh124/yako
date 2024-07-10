@@ -19,7 +19,7 @@ async def search(bot, message):
        return
 
     query = message.text
-    head = "<u>(search) 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 (query)</u>\n\n"
+    head = "<u>{searc} 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 {query}</u>\n\n"
     results = ""
 
     try:
@@ -28,14 +28,14 @@ async def search(bot, message):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b>💬 {name}\n━➣ {msg.link}</b>\n\n"                                                     
+               results += f"<b>🍿 {name}\n━➣ {msg.link}</b>\n\n"                                                     
 
        if not results:
           movies = await search_imdb(query)
           buttons = []
           for movie in movies: 
               buttons.append([InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")])
-          msg = await message.reply("<b>only Type Movie Name 🤐</b>", reply_markup=InlineKeyboardMarkup(buttons))
+          msg = await message.reply("<strong>➪ 𝐮 𝐭𝐲𝐩𝐞𝐝 ❌ 𝐰𝐫𝐨𝐧𝐠 𝐦𝐨𝐯𝐢𝐞 𝐧𝐚𝐦𝐞 𝐬𝐨 𝐝𝐨𝐧'𝐭 𝐰𝐨𝐫𝐫𝐲\n➪ 𝐮 𝐜𝐚𝐧 𝐠𝐨 𝐭𝐨 𝐠𝐨𝐨𝐠𝐥𝐞 𝐚𝐧𝐝 𝐜𝐡𝐞𝐜𝐤 𝐚𝐧𝐝 𝐬𝐞𝐧𝐝  𝐡𝐞𝐫𝐞 👀\n➪ 𝐚𝐫𝐞 𝐬𝐞𝐥𝐞𝐜𝐭 𝐜𝐨𝐫𝐫𝐞𝐜𝐭 𝐦𝐨𝐯𝐢𝐞 𝐧𝐚𝐦𝐞 𝐢𝐧 𝐛𝐞𝐥𝐨𝐰 𝐚𝐩𝐭𝐢𝐨𝐧 👇</strong>", reply_markup=InlineKeyboardMarkup(buttons))
           await asyncio.sleep(30)
           await msg.delete()
        else:
@@ -63,7 +63,7 @@ async def recheck(bot, update):
     if clicked != typed:
        return await update.answer("That's not for you! 👀", show_alert=True)
 
-    m = await update.message.edit("𝐒𝐞𝐚𝐫𝐜𝐡𝐢𝐧𝐠 𝐅𝐨𝐫 𝐔𝐫 𝐑𝐞𝐪𝐮𝐞𝐬𝐭𝐞𝐝 𝐌𝐨𝐯𝐢𝐞 𝐖𝐚𝐢𝐭 🔎")
+    m = await update.message.edit("𝐒𝐞𝐚𝐫𝐜𝐡𝐢𝐧𝐠 𝐅𝐨𝐫 𝐔𝐫 𝐑𝐞𝐪𝐮𝐞𝐬𝐭𝐞𝐝 𝐌𝐨𝐯𝐢𝐞 𝐖𝐚𝐢𝐭....⏳")
     id = update.data.split("_")[-1]
     query = await search_imdb(id)
     channels = (await get_group(update.message.chat.id))["channels"]
@@ -76,10 +76,10 @@ async def recheck(bot, update):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b>💬 {name}</b>\n\n━➣ {msg.link}</b>\n\n"
+               results += f"<b>🍿 {name}</b>\n\n━➣ {msg.link}</b>\n\n"
 
        if not results:          
-          return await update.message.edit("<strong>🫵 𝐍𝐨 𝐨𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐥𝐢𝐧𝐤 🧲 𝐅𝐨𝐮𝐧𝐝 ⏳</strong>\n\n<b>💬 𝐒𝐨 𝐆𝐞𝐭 𝐃𝐢𝐫𝐞𝐜𝐭𝐞 𝐅𝐢𝐥𝐞 📁 𝐈𝐧 𝐁𝐞𝐥𝐨𝐰 𝐁𝐨𝐭 👇</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ 𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝 𝐅𝐢𝐥𝐞 ✅", url=f"t.me/Rockers_ott_movie_link_bot")]]))
+          return await update.message.edit("<strong>🫵 𝐍𝐨 𝐨𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐥𝐢𝐧𝐤 🧲 𝐅𝐨𝐮𝐧𝐝 ⏳</strong>\n\n<strong>💬 𝐒𝐨 𝐆𝐞𝐭 𝐃𝐢𝐫𝐞𝐜𝐭𝐞 𝐅𝐢𝐥𝐞 📁 𝐈𝐧 𝐁𝐞𝐥𝐨𝐰 𝐁𝐨𝐭 👇</strong>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ 𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝 𝐅𝐢𝐥𝐞 ✅", url=f"t.me/Rockers_ott_movie_link_bot")]]))
 
        await update.message.edit(text=head + results, disable_web_page_preview=True)
 
