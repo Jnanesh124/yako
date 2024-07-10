@@ -36,6 +36,8 @@ async def search(bot, message):
           for movie in movies: 
               buttons.append([InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")])
           msg = await message.reply("<b>only Type Movie Name 🤐</b>", reply_markup=InlineKeyboardMarkup(buttons))
+          await asyncio.sleep(60)
+          await msg.delete()
        else:
           msg = await message.reply_text(text=head+results, disable_web_page_preview=True)
           await asyncio.sleep(60)
