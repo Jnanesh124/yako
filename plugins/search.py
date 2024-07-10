@@ -29,7 +29,6 @@ async def search(bot, message):
                if name in results:
                   continue 
                results += f"<b>🍿 {name}\n🔗 {msg.link}</b>\n\n"                                                     
-               await results.delete(20)
 
        if not results:
           movies = await search_imdb(query)
@@ -39,7 +38,8 @@ async def search(bot, message):
           msg = await message.reply("<b>only Type Movie Name 🤐</b>", reply_markup=InlineKeyboardMarkup(buttons))
        else:
           msg = await message.reply_text(text=head+results, disable_web_page_preview=True)
-
+          await msg.delete(20)
+           
        # Save message ID and deletion time
        _time = int(time()) + (15*60)
        await save_dlt_message(msg, _time)
