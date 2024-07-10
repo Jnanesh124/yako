@@ -45,7 +45,7 @@ async def search(bot, message):
        await save_dlt_message(msg, _time)
 
        # Auto delete after 60 seconds
-       await results.message.delete(20)
+       await results.message.delete(60)
 
     except Exception as e:
         pass
