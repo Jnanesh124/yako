@@ -19,7 +19,7 @@ async def search(bot, message):
        return
 
     query = message.text
-    head = "<u>👀 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 👀</u>\n\n"
+    head = "<u> 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 </u>\n\n"
     results = ""
 
     try:
@@ -44,7 +44,7 @@ async def search(bot, message):
        await save_dlt_message(msg, _time)
 
        # Auto delete after 60 seconds
-       await results.msg.delete(20)
+       await results.message.delete(20)
 
     except Exception as e:
         pass
