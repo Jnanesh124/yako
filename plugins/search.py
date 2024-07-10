@@ -19,7 +19,7 @@ async def search(bot, message):
        return
 
     query = message.text
-    head = "<u>{searc} 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 {query}</u>\n\n"
+    head = "<u><strong> {text} 👀 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 👀</strong></u>\n\n"
     results = ""
 
     try:
@@ -28,7 +28,7 @@ async def search(bot, message):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b>🍿 {name}\n━➣ {msg.link}</b>\n\n"                                                     
+               results += f"<strong>🍿 {name}\n━➣ {msg.link}</strong>\n\n"                                                     
 
        if not results:
           movies = await search_imdb(query)
@@ -76,7 +76,7 @@ async def recheck(bot, update):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b>🍿 {name}</b>\n\n━➣ {msg.link}</b>\n\n"
+               results += f"<strong>🍿 {name}</b>\n\n━➣ {msg.link}</strong>\n\n"
 
        if not results:          
           return await update.message.edit("<strong>🫵 𝐍𝐨 𝐨𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐥𝐢𝐧𝐤 🧲 𝐅𝐨𝐮𝐧𝐝 ⏳</strong>\n\n<strong>💬 𝐒𝐨 𝐆𝐞𝐭 𝐃𝐢𝐫𝐞𝐜𝐭𝐞 𝐅𝐢𝐥𝐞 📁 𝐈𝐧 𝐁𝐞𝐥𝐨𝐰 𝐁𝐨𝐭 👇</strong>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ 𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝 𝐅𝐢𝐥𝐞 ✅", url=f"t.me/Rockers_ott_movie_link_bot")]]))
