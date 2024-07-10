@@ -1,7 +1,7 @@
-API_ID       = 21942125
-API_HASH     = "6d412af77ce89f5bb1ed8971589d61b5"
+API_ID       = 22231458
+API_HASH     = "f7cb57cc5f91c944f3ddeb8a60a99466"
 BOT_TOKEN    = "6765313019:AAHYMI7W7VZbq5iqm_pPlnlN0_P8wbFjK1s"
-SESSION      = "1BVtsOLoBu7v5JwXLorbCo0xMomziZgJAcIZBAqW_JP4cIMgNsH5TS2d9gHp5FbSBnG0kWvKupJf_Bu0H0sSHiSYVr1rv3YWXRR2vWiqglKOEA8OQ21yczu1oiONb-_lIDZydiy5zsuj_civ4x5vBzXhUxjLGqpZYhSjYatVdbmiTTc27BJ0YMSCYHu_dMRJG6yhQl7qCD-BrN2nJwg7_leYyab3Dury8k-GNCpdnMqza5uo9h7EfjPE_b5IlENB7CHw_T9B1h-8s1sbJW_JO0tr3-p0BJ6cwuA57e1M6MaQMtCvaJzmx__345qEF3oMh333kWBLVkGAtT1lE_ghSqXV0Ti0aZ2g="
-DATABASE_URI = "mongodb+srv://strong:strong@cluster0.ix7usa3.mongodb.net/?retryWrites=true&w=majority"
+SESSION      = "BQFTOaIAMZWNoaZ_kM9e-jvZUbouDQF-71uHqzIe6sNwPFoNhlcWnU7sULcyYj-pVqK0PRzqC-Q2S8vCzNCTTk0c15ZwE5F1Lt5VXHIOh5jOgMZhgYMvMzz2qLpDvOgNN9ZNpKrCzPwNUlvEH-IJ4bvgedcrIULGDuMe-3RyJ0PXsMuAlsmaRvQyaim5DFctgiDpcdju78YGR0wAlCo4INHzF3H_VsNM8gl20zGtlpalBVCSAbUax7pjzcYIY31YL_-A_XAn8yXaRzhmNKNbuD-Idx7YQVP4Nx1GZN3Go3h8XNMneK8ROJJ7Zi1vOGAzjPUvtepf83abbp2wgctcjb12-zCvIAAAAAFwM9_IAA"
+DATABASE_URI = "mongodb+srv://test:test@cluster0.lehee5g.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 LOG_CHANNEL  = -1001997863812
 ADMIN        = 6177415112
