@@ -38,14 +38,14 @@ async def search(bot, message):
           msg = await message.reply("<b>only Type Movie Name 🤐</b>", reply_markup=InlineKeyboardMarkup(buttons))
        else:
           msg = await message.reply_text(text=head+results, disable_web_page_preview=True)
-          await msg.delete(60)
+          await msg.delete(100)
            
        # Save message ID and deletion time
        _time = int(time()) + (15*60)
        await save_dlt_message(msg, _time)
 
        # Auto delete after 60 seconds
-       await results.message.delete(60)
+       await results.message.delete(700)
 
     except Exception as e:
         pass
