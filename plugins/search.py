@@ -19,7 +19,7 @@ async def search(bot, message):
        return
 
     query = message.text
-    head = "<u> 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 </u>\n\n"
+    head = "<u>(search) 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 (query)</u>\n\n"
     results = ""
 
     try:
@@ -28,7 +28,7 @@ async def search(bot, message):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b>🍿 {name}\n🔗 {msg.link}</b>\n\n"                                                     
+               results += f"<b>💬 {name}\n━➣ {msg.link}</b>\n\n"                                                     
 
        if not results:
           movies = await search_imdb(query)
@@ -36,11 +36,11 @@ async def search(bot, message):
           for movie in movies: 
               buttons.append([InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")])
           msg = await message.reply("<b>only Type Movie Name 🤐</b>", reply_markup=InlineKeyboardMarkup(buttons))
-          await asyncio.sleep(60)
+          await asyncio.sleep(30)
           await msg.delete()
        else:
           msg = await message.reply_text(text=head+results, disable_web_page_preview=True)
-          await asyncio.sleep(60)
+          await asyncio.sleep(40)
           await msg.delete()
            
        # Save message ID and deletion time
@@ -76,10 +76,10 @@ async def recheck(bot, update):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b>🍿 {name}</b>\n\n🔗 {msg.link}</b>\n\n"
+               results += f"<b>💬 {name}</b>\n\n━➣ {msg.link}</b>\n\n"
 
        if not results:          
-          return await update.message.edit("<b>𝐍𝐨 𝐎𝐧𝐥𝐢𝐧𝐞 #𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 𝐅𝐨𝐮𝐧𝐝 𝐑𝐞𝐢𝐠𝐡𝐭 𝐊𝐧𝐨𝐰 🥺 𝐒𝐨 𝐆𝐞𝐭 𝐃𝐢𝐫𝐞𝐜𝐭 𝐅𝐢𝐥𝐞 📁 𝐀𝐬𝐤 𝐓𝐡𝐢𝐬 𝐌𝐨𝐯𝐢𝐞 𝐀𝐠𝐚𝐢𝐧 𝐢𝐧 𝐁𝐞𝐥𝐨𝐰 𝐁𝐨𝐭 𝐔 𝐆𝐞𝐭 𝐔𝐫 𝐌𝐨𝐯𝐢𝐞 𝐅𝐢𝐥𝐞</b>\n\n<b>ನೀನು ಕೇಳಿದ ಸಿನಿಮಾ 𝐎𝐧𝐥𝐢𝐧𝐞 #𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 ಲಭ್ಯ ಇಲ್ಲ ಇಗಿನ ಸಮಯ ದಲ್ಲಿ ಅದಕ್ಕೆ ನೆರ  𝐅𝐢𝐥𝐞 𝐁𝐞𝐥𝐨𝐰 𝐁𝐨𝐭 ಅಲ್ಲಿ ಮತ್ತೆ 𝐭𝐲𝐩𝐞 ಮಾಡಿ 𝐅𝐢𝐥𝐞 ಬರುತ್ತದೆ</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📁 Get Direct Movie File Here 📁", url=f"t.me/Rockers_ott_movie_link_bot")]]))
+          return await update.message.edit("<strong>🫵 𝐍𝐨 𝐨𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐥𝐢𝐧𝐤 🧲 𝐅𝐨𝐮𝐧𝐝 ⏳</strong>\n\n<b>💬 𝐒𝐨 𝐆𝐞𝐭 𝐃𝐢𝐫𝐞𝐜𝐭𝐞 𝐅𝐢𝐥𝐞 📁 𝐈𝐧 𝐁𝐞𝐥𝐨𝐰 𝐁𝐨𝐭 👇</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ 𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝 𝐅𝐢𝐥𝐞 ✅", url=f"t.me/Rockers_ott_movie_link_bot")]]))
 
        await update.message.edit(text=head + results, disable_web_page_preview=True)
 
