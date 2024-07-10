@@ -29,6 +29,7 @@ async def search(bot, message):
                if name in results:
                   continue 
                results += f"<b>🍿 {name}\n🔗 {msg.link}</b>\n\n"                                                     
+               await results.delete(20)
 
        if not results:
           movies = await search_imdb(query)
