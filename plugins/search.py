@@ -38,7 +38,7 @@ async def search(bot, message):
           msg = await message.reply("<b>only Type Movie Name 🤐</b>", reply_markup=InlineKeyboardMarkup(buttons))
        else:
           msg = await message.reply_text(text=head+results, disable_web_page_preview=True)
-          await msg.delete(20)
+          await msg.delete(60)
            
        # Save message ID and deletion time
        _time = int(time()) + (15*60)
