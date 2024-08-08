@@ -5,3 +5,4 @@ cinemagoer
 aiofiles
 asyncio
 autoflake==1.5.0
+IMDbPY
