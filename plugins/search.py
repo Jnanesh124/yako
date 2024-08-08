@@ -74,7 +74,7 @@ async def search(bot, message):
         await results.message.delete(700)
 
     except Exception as e:
-        pass
+        await message.reply(f"❌ Error: `{e}`")
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
@@ -88,14 +88,14 @@ async def recheck(bot, update):
 
     m = await update.message.edit("𝐒𝐞𝐚𝐫𝐜𝐡𝐢𝐧𝐠 𝐅𝐨𝐫 𝐔𝐫 𝐑𝐞𝐪𝐮𝐞𝐬𝐭𝐞𝐝 𝐌𝐨𝐯𝐢𝐞 𝐖𝐚𝐢𝐭....⏳")
     id = update.data.split("_")[-1]
-    query = await search_imdb(id)
+    movies = await search_imdb(id)
     channels = (await get_group(update.message.chat.id))["channels"]
     head = "<u>👇 𝐓𝐡𝐢𝐬 𝐢𝐬 𝐓𝐡𝐞 𝐌𝐨𝐯𝐢𝐞 𝐀𝐯𝐚𝐢𝐥𝐚𝐛𝐥𝐞 𝐑𝐞𝐢𝐠𝐡𝐭 𝐊𝐧𝐨𝐰 👇</u>\n\n"
     results = ""
 
     try:
         for channel in channels:
-            async for msg in User.search_messages(chat_id=channel, query=query):
+            async for msg in User.search_messages(chat_id=channel, query=movies[0]['title']):
                 name = (msg.text or msg.caption).split("\n")[0]
                 if name in results:
                     continue 
@@ -121,9 +121,13 @@ async def request(bot, update):
 
     admin = (await get_group(update.message.chat.id))["user_id"]
     id    = update.data.split("_")[1]
-    name  = await search_imdb(id)
-    url   = "https://www.imdb.com/title/tt" + id
-    text  = f"#RequestFromYourGroup\n\nName: {name}\nIMDb: {url}"
-    await bot.send_message(chat_id=admin, text=text, disable_web_page_preview=True)
-    await update.answer("✅ Request Sent To Admin", show_alert=True)
-    await update.message.delete(60)
+    movies = await search_imdb(id)
+    if movies:
+        name  = movies[0]['title']
+        url   = "https://www.imdb.com/title/" + id
+        text  = f"#RequestFromYourGroup\n\nName: {name}\nIMDb: {url}"
+        await bot.send_message(chat_id=admin, text=text, disable_web_page_preview=True)
+        await update.answer("✅ Request Sent To Admin", show_alert=True)
+        await update.message.delete(60)
+    else:
+        await update.message.reply("❌ No movie found with that ID.")
