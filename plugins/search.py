@@ -5,14 +5,6 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from client import User  # Ensure User is correctly imported
 from utils import get_group, save_dlt_message, search_imdb, force_sub  # Ensure these functions are correctly imported
 
-def preprocess_query(query):
-    # Convert to lowercase and strip unnecessary characters
-    query = query.lower()
-    # Remove common unnecessary words and punctuations
-    words_to_ignore = {'the', 'a', 'an', 'of', 'in', 'on', 'to', 'for', 'and', 'with'}
-    query_words = [word for word in query.split() if word not in words_to_ignore]
-    return ' '.join(query_words)
-
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
     try:
@@ -27,23 +19,19 @@ async def search(bot, message):
         if message.text.startswith("/"):
             return
 
-        query = preprocess_query(message.text)
+        query = message.text
         head = "<u>👀 𝐎𝐧𝐥𝐢𝐧𝐞 𝐒𝐭𝐫𝐞𝐚𝐦𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 👀</u>\n\n"
         results = ""
 
         for channel in channels:
             async for msg in User.search_messages(chat_id=channel, query=query):
                 name = (msg.text or msg.caption).split("\n")[0]
-                if name.lower() in results.lower():
+                if name in results:
                     continue 
                 results += f"🍿 {name}\n━➣ {msg.link}\n\n"
 
         if not results:
             movies = await search_imdb(query)
-            if not movies:
-                await message.reply("<strong>No movies found for the query. Please try again with a different query.</strong>")
-                return
-
             buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
             msg = await message.reply(
                 "<strong>➪ 𝐮 𝐭𝐲𝐩𝐞𝐝 ❌ 𝐰𝐫𝐨𝐧𝐠 𝐦𝐨𝐯𝐢𝐞 𝐧𝐚𝐦𝐞 𝐬𝐨 𝐝𝐨𝐧'𝐭 𝐰𝐨𝐫𝐫𝐲\n➪ 𝐮 𝐜𝐚𝐧 𝐠𝐨 𝐭𝐨 𝐠𝐨𝐨𝐠𝐥𝐞 𝐚𝐧𝐝 𝐜𝐡𝐞𝐜𝐤 𝐚𝐧𝐝 𝐬𝐞𝐧𝐝  𝐡𝐞𝐫𝐞 👀\n➪ 𝐚𝐫𝐞 𝐬𝐞𝐥𝐞𝐜𝐭 𝐜𝐨𝐫𝐫𝐞𝐜𝐭 𝐦𝐨𝐯𝐢𝐞 𝐧𝐚𝐦𝐞 𝐢𝐧 𝐛𝐞𝐥𝐨𝐰 𝐚𝐩𝐭𝐢𝐨𝐧 👇</strong>", 
@@ -84,7 +72,7 @@ async def recheck(bot, update):
         for channel in channels:
             async for msg in User.search_messages(chat_id=channel, query=query):
                 name = (msg.text or msg.caption).split("\n")[0]
-                if name.lower() in results.lower():
+                if name in results:
                     continue 
                 results += f"🍿 {name}\n━➣ {msg.link}\n\n"
 
