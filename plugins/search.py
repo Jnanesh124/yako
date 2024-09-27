@@ -44,10 +44,6 @@ async def search(bot, message):
             await asyncio.sleep(40)
             await msg.delete()
 
-        # Save message ID and deletion time
-        _time = int(time()) + (15 * 60)
-        await save_dlt_message(msg, _time)
-
     except Exception as e:
         print(f"Error in search: {e}")
 
