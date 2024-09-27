@@ -1,8 +1,7 @@
-pyrofork==2.3.43
+pyrogram
 tgcrypto
 motor[srv] 
 cinemagoer
 aiofiles
 asyncio
-autoflake==1.5.0
-IMDbPY
+aiohttp
