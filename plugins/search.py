@@ -21,7 +21,7 @@ async def search(bot, message):
        return    
 
     query = message.text 
-    head = "<b>👀 Here are the results 👀\n\nPowered By </b> <b><I>@ROCKERSBACKUP</I></b>\n<b><I>@ROCKERS_ADULT</I></b>\n\n"
+    head = "<b>👀 Here are the results 👀\n\nPowered By </b> <b><I>@ROCKERSBACKUP 🍿</I></b>\n<b><I>@ROCKERS_ADULT 🔞</I></b>\n\n"
     results = ""
 
     try:
@@ -36,8 +36,8 @@ async def search(bot, message):
           movies = await search_imdb(query)
           buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
           msg = await message.reply_photo(
-              photo="https://telegra.ph/file/cf6706158b0bfaf436f54.jpg",
-              caption="<b><I>I Couldn't find anything related to Your Query😕.\nDid you mean any of these?</I></b>", 
+              photo="https://graph.org/file/74a0a6356b0868dab0aaf.jpg",
+              caption="<b>I Couldn't find anything related to Your Query.\nDid you mean any of these 👇</b>", 
               reply_markup=InlineKeyboardMarkup(buttons)
           )
        else:
