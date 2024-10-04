@@ -17,7 +17,7 @@ async def search(bot, message):
     if message.text.startswith("/"):
        return    
     query   = message.text 
-    head    = "<u>Here is the results 👇\n\nPowered By </u> <b><I>@CyniteBackup</I></b>\n\n"
+    head    = "<b>👀 Here is the results 👀\n\nPowered By </b> <b><I>@ROCKERSBACKUP</I></b>\n<b><I>@ROCKERS_ADULT</I></b>\n\n"
     results = ""
     try:
        for channel in channels:
@@ -25,7 +25,7 @@ async def search(bot, message):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b><I>♻️ {name}\n🔗 {msg.link}</I></b>\n\n"                                                      
+               results += f"<b><I>🍿 {name}\n🔗 {msg.link}</I></b>\n\n"                                                      
        if bool(results)==False:
           movies = await search_imdb(query)
           buttons = []
@@ -38,6 +38,7 @@ async def search(bot, message):
           msg = await message.reply_text(text=head+results, disable_web_page_preview=True)
        _time = (int(time()) + (15*60))
        await save_dlt_message(msg, _time)
+       await msg.delete(20)
     except:
        pass
        
@@ -57,7 +58,7 @@ async def recheck(bot, update):
     id      = update.data.split("_")[-1]
     query   = await search_imdb(id)
     channels = (await get_group(update.message.chat.id))["channels"]
-    head    = "<u>I Have Searched Movie With Wrong Spelling But Take care next time 👇\n\nPowered By </u> <b><I>@CyniteBackup</I></b>\n\n"
+    head    = "<b>👇 I Have Searched Movie With Wrong Spelling But Take care next time 👇</b>\n\n"
     results = ""
     try:
        for channel in channels:
@@ -65,9 +66,9 @@ async def recheck(bot, update):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b><I>♻️🍿 {name}</I></b>\n\n🔗 {msg.link}</I></b>\n\n"
+               results += f"<b><I>🍿 {name}</I></b>\n\n🔗 {msg.link}</I></b>\n\n"
        if bool(results)==False:          
-          return await update.message.edit("Still no results found! Please Request To Group Admin", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🎯 Request To Admin 🎯", callback_data=f"request_{id}")]]))
+          return await update.message.edit("<b>🥹 sorry no terabox link found ❌\n\nso Requist Below 👇  Bot To Get Direct FILE📥</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥  Get Direct FILE Here 📥", url=f"https://t.me/movie_requist_j_Bot")]]))
        await update.message.edit(text=head+results, disable_web_page_preview=True)
     except Exception as e:
        await update.message.edit(f"❌ Error: `{e}`")
