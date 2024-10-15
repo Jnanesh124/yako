@@ -21,7 +21,7 @@ async def search(bot, message):
        return    
 
     query = message.text 
-    head = "<b>👀 Here are the results 👀\n\nPowered By </b> <b><I>@ROCKERSBACKUP 🍿</I></b>\n<b><I>@ROCKERS_ADULT 🔞</I></b>\n\n"
+    head = "<b>👀 Here are the results 👀\n\nPowered By </b> <b><I>@ROCKERSBACKUP 🍿</I></b>\n\n"
     results = ""
 
     try:
