@@ -9,7 +9,9 @@ class script(object):
 👉 𝐯𝐞𝐫𝐲 𝐒𝐩𝐞𝐞𝐝 ✅
 
 💥 Subscribe my YouTube channel 
-link https://youtube.com/@Jnentertainment.?si=-xZOdUGBD3yxLjgW
+link https://youtube.com/@jnstudiomovies?si=oVxoX-omcfupVN-d
+
+MORE BOTS :- https://t.me/Rockers_Bots
 
  𝐈 𝐚𝐦 𝐓𝐨𝐭𝐚𝐥𝐥𝐲 𝐅𝐫𝐞𝐞 𝐍𝐨 𝐍𝐞𝐞𝐝 𝐓𝐨 𝐏𝐚𝐲✌"""
 
