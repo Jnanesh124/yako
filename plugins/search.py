@@ -80,7 +80,7 @@ async def recheck(bot, update):
        if not results:          
           return await update.message.edit(
               "<b>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</b>", 
-              reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/movie_requist_j_Bot")]])
+              reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/JN2Flix_Movie_Searcher_Bot")]])
           )
        await update.message.edit(text=head + results, disable_web_page_preview=True)
 
