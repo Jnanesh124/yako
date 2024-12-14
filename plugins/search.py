@@ -37,8 +37,7 @@ async def search(bot, message):
           buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
           msg = await message.reply_text(
               text="<blockquote>😔 Only Type Movie Name 😔</blockquote>", 
-              reply_markup=InlineKeyboardMarkup(buttons),
-              parse_mode="HTML"
+              reply_markup=InlineKeyboardMarkup(buttons)
            )
        else:
           msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
