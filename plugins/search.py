@@ -21,7 +21,7 @@ async def search(bot, message):
        return    
 
     query = message.text 
-    head = "<b>👀 Here are the results 👀\n\nPowered By </b> <b><I>@ROCKERSBACKUP 🍿</I></b>\n\n"
+    head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
     results = ""
 
     try:
@@ -35,11 +35,11 @@ async def search(bot, message):
        if not results:
           movies = await search_imdb(query)
           buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
-          msg = await message.reply_photo(
-              photo="https://graph.org/file/74a0a6356b0868dab0aaf.jpg",
-              caption="<b>😔 Only Type Movie Name 😔</b>", 
-              reply_markup=InlineKeyboardMarkup(buttons)
-          )
+          msg = await message.reply_text(
+              text="<blockquote>😔 Only Type Movie Name 😔</blockquote>", 
+              reply_markup=InlineKeyboardMarkup(buttons),
+              parse_mode="HTML"
+           )
        else:
           msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
@@ -79,7 +79,7 @@ async def recheck(bot, update):
 
        if not results:          
           return await update.message.edit(
-              "<b>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</b>", 
+              "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>", 
               reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/JN2Flix_Movie_Searcher_Bot")]])
           )
        await update.message.edit(text=head + results, disable_web_page_preview=True)
