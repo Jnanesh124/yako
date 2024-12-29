@@ -11,7 +11,7 @@ class script(object):
 💥 Subscribe my YouTube channel 
 link https://youtube.com/@jn2flix?si=zezyVgm-rZiGGuLm
 
-MORE BOTS :- https://t.me/Rockers_Bots
+MORE BOTS :- https://t.me/JN2FLIX
 
  𝐈 𝐚𝐦 𝐓𝐨𝐭𝐚𝐥𝐥𝐲 𝐅𝐫𝐞𝐞 𝐍𝐨 𝐍𝐞𝐞𝐝 𝐓𝐨 𝐏𝐚𝐲✌"""
 
