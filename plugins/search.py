@@ -30,7 +30,7 @@ async def search(bot, message):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b><I>🍿 {name}\n🔗 {msg.link}</I></b>\n\n"
+               results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
 
        if not results:
           movies = await search_imdb(query)
@@ -74,12 +74,12 @@ async def recheck(bot, update):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"<b><I>🍿 {name}</I></b>\n\n🔗 {msg.link}\n\n"
+               results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
 
        if not results:          
           return await update.message.edit(
               "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>", 
-              reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/JN2Flix_Movie_Searcher_Bot")]])
+              reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
           )
        await update.message.edit(text=head + results, disable_web_page_preview=True)
 
