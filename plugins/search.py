@@ -3,8 +3,8 @@ from info import *
 from utils import *
 from time import time 
 from client import User
-from pyrogram import Client, filters 
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
+from pyrofork import Client, filters
+from pyrofork.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Auto-delete duration in seconds
 AUTO_DELETE_DURATION = 60  # Adjust this value as needed
@@ -43,7 +43,7 @@ async def search(bot, message):
             msg = await message.reply_text(
                 text="<blockquote>😔 Only Type Movie Name 😔</blockquote>", 
                 reply_markup=InlineKeyboardMarkup(buttons),
-                parse_mode="html"  # Corrected parse_mode
+                parse_mode="HTML"  # Using string 'HTML' for pyrofork
             )
         else:
             # Send both the titles and their corresponding buttons
@@ -51,7 +51,7 @@ async def search(bot, message):
                 text=head + results, 
                 reply_markup=InlineKeyboardMarkup(buttons),
                 disable_web_page_preview=True,
-                parse_mode="html"  # Corrected parse_mode
+                parse_mode="HTML"  # Using string 'HTML' for pyrofork
             )
 
         # Auto-delete the message after the specified duration
@@ -96,7 +96,7 @@ async def recheck(bot, update):
             return await update.message.edit(
                 "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>", 
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]]),
-                parse_mode="html"  # Corrected parse_mode
+                parse_mode="HTML"  # Using string 'HTML' for pyrofork
             )
 
         # Send both the titles and their corresponding buttons
@@ -104,7 +104,7 @@ async def recheck(bot, update):
             text=head + results, 
             reply_markup=InlineKeyboardMarkup(buttons),
             disable_web_page_preview=True,
-            parse_mode="html"  # Corrected parse_mode
+            parse_mode="HTML"  # Using string 'HTML' for pyrofork
         )
 
         # Auto-delete the message after the specified duration
