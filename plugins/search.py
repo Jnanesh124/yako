@@ -1,10 +1,10 @@
 import asyncio
-from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from info import *
 from utils import *
 from time import time 
 from client import User
+from pyrogram import Client, filters 
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
 
 # Auto-delete duration in seconds
 AUTO_DELETE_DURATION = 60  # Adjust this value as needed
@@ -30,17 +30,17 @@ async def search(bot, message):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"**🍿 {name}**\n**👉🏻 [DOWNLOAD]({msg.link}) 👈🏻**\n\n"
+               results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
 
        if not results:
           movies = await search_imdb(query)
           buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
           msg = await message.reply_text(
-              text="**😔 Only Type Movie Name 😔**", 
+              text="<blockquote>😔 Only Type Movie Name 😔</blockquote>", 
               reply_markup=InlineKeyboardMarkup(buttons)
            )
        else:
-          msg = await message.reply_text(text=head + results, parse_mode="Markdown", disable_web_page_preview=True)
+          msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
        # Auto-delete the message after the specified duration
        await asyncio.sleep(AUTO_DELETE_DURATION)
@@ -74,21 +74,21 @@ async def recheck(bot, update):
                name = (msg.text or msg.caption).split("\n")[0]
                if name in results:
                   continue 
-               results += f"**🍿 {name}**\n**👉🏻 [DOWNLOAD]({msg.link}) 👈🏻**\n\n"
+               results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
 
        if not results:          
           return await update.message.edit(
-              "**🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥**", 
+              "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>", 
               reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
           )
-       await update.message.edit(text=head + results, parse_mode="Markdown", disable_web_page_preview=True)
+       await update.message.edit(text=head + results, disable_web_page_preview=True)
 
        # Auto-delete the message after the specified duration
        await asyncio.sleep(AUTO_DELETE_DURATION)
        await update.message.delete()
 
     except Exception as e:
-       await update.message.edit(f"❌ Error: `{e}`")
+       await update.message.edit(f"❌ Error: {e}")
 
 
 @Client.on_callback_query(filters.regex(r"^request"))
