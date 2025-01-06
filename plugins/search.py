@@ -43,7 +43,7 @@ async def search(bot, message):
             msg = await message.reply_text(
                 text="<blockquote>😔 Only Type Movie Name 😔</blockquote>", 
                 reply_markup=InlineKeyboardMarkup(buttons),
-                parse_mode="HTML"
+                parse_mode="html"  # Corrected parse_mode
             )
         else:
             # Send both the titles and their corresponding buttons
@@ -51,7 +51,7 @@ async def search(bot, message):
                 text=head + results, 
                 reply_markup=InlineKeyboardMarkup(buttons),
                 disable_web_page_preview=True,
-                parse_mode="HTML"
+                parse_mode="html"  # Corrected parse_mode
             )
 
         # Auto-delete the message after the specified duration
@@ -79,28 +79,40 @@ async def recheck(bot, update):
     channels = (await get_group(update.message.chat.id))["channels"]
     head = "<b>👇 I Have Searched Movie With Wrong Spelling But Take care next time 👇</b>\n\n"
     results = ""
+    buttons = []  # Collect buttons for inline markup
 
     try:
-       for channel in channels:
-           async for msg in User.search_messages(chat_id=channel, query=query):
-               name = (msg.text or msg.caption).split("\n")[0]
-               if name in results:
-                  continue 
-               results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+        for channel in channels:
+            async for msg in User.search_messages(chat_id=channel, query=query):
+                name = (msg.text or msg.caption).split("\n")[0]
+                if name in results:
+                    continue
+                
+                # Add title and button to results (titles and buttons interwoven)
+                results += f"<strong>🍿 {name}</strong>\n"
+                buttons.append([InlineKeyboardButton(f"Download {name}", url=msg.link)])
 
-       if not results:          
-          return await update.message.edit(
-              "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>", 
-              reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
-          )
-       await update.message.edit(text=head + results, disable_web_page_preview=True)
+        if not results:          
+            return await update.message.edit(
+                "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>", 
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]]),
+                parse_mode="html"  # Corrected parse_mode
+            )
 
-       # Auto-delete the message after the specified duration
-       await asyncio.sleep(AUTO_DELETE_DURATION)
-       await update.message.delete()
+        # Send both the titles and their corresponding buttons
+        await update.message.edit(
+            text=head + results, 
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode="html"  # Corrected parse_mode
+        )
+
+        # Auto-delete the message after the specified duration
+        await asyncio.sleep(AUTO_DELETE_DURATION)
+        await update.message.delete()
 
     except Exception as e:
-       await update.message.edit(f"❌ Error: `{e}`")
+        await update.message.edit(f"❌ Error: `{e}`")
 
 
 @Client.on_callback_query(filters.regex(r"^request"))
