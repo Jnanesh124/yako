@@ -10,11 +10,10 @@ app = Flask(__name__)
 class Bot(Client):
     def __init__(self):
         super().__init__(
-            "movie_bot",
+            "movie_bot",  # This serves as the session name
             bot_token="YOUR_BOT_TOKEN",
             api_id="YOUR_API_ID",
-            api_hash="YOUR_API_HASH",
-            session_name="YOUR_SESSION_NAME"
+            api_hash="YOUR_API_HASH"
         )
 
     async def on_message(self, message: Message):
@@ -23,7 +22,10 @@ class Bot(Client):
             await message.reply("Hello! I am your bot.")
 
     async def start_bot(self):
+        print("Starting bot...")
         await self.start()
+        print("Bot is now running!")
+        await self.idle()  # Keep the bot running
 
 # Flask route for the web server
 @app.route('/')
