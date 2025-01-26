@@ -12,7 +12,7 @@ AUTO_DELETE_DURATION = 60  # Adjust as needed
 @Client.on_message(filters.text & (filters.group | filters.private) & ~filters.command(["verify", "connect", "id"]))
 async def live_search(bot, message):
     query = message.text
-    channels = [-100123789, -1008124797890]  # Replace with your channel IDs
+    channels = [-1002051432955, -1001359763936]  # Replace with your channel IDs
     is_group = message.chat.type in ["group", "supergroup"]
     reply_head = "<b>🔍 Searching for your query...</b>\n\n"
     live_log = "🔎 <b>Searching Logs:</b>\n\n"
