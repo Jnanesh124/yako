@@ -3,7 +3,6 @@ import asyncio
 from threading import Thread
 from pyrogram import Client
 from pyrogram.types import Message
-import os  # Import to access environment variables
 
 app = Flask(__name__)
 
@@ -12,9 +11,9 @@ class Bot(Client):
     def __init__(self):
         super().__init__(
             "movie_bot",  # This serves as the session name
-            bot_token=os.getenv("BOT_TOKEN"),  # Get BOT_TOKEN from environment variables
-            api_id=int(os.getenv("API_ID")),  # Convert API_ID to integer
-            api_hash=os.getenv("API_HASH")  # Get API_HASH from environment variables
+            bot_token="6765313019:AAHYLXnKN_q5dhznb-4IuLddejkCFleIUg8",  # Directly added bot token
+            api_id=29942004,  # Directly added API ID
+            api_hash="ad92f01e4a90cddebbea0ad16fa23026"  # Directly added API hash
         )
 
     async def on_message(self, message: Message):
