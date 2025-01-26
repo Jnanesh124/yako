@@ -4,6 +4,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import re
 from collections import defaultdict
+import info  # Import configuration from info.py
 
 # Force-subscription channels
 FORCE_SUB_CHANNELS = ["@ROCKERSBACKUP", "@JN2FLIX"]
@@ -20,13 +21,17 @@ group_admins = {}  # Stores the admin user ID for each group
 pending_requests = defaultdict(list)  # Tracks pending movie requests for each group
 group_access_status = defaultdict(bool)  # Stores whether a group admin has completed the force-sub process
 
-# Define the bot's credentials
-BOT_TOKEN = "YOUR_BOT_TOKEN"
-API_ID = "29942004"
-API_HASH = "6765313019:AAHYLXnKN_q5dhznb-4IuLddejkCFleIUg8"
+# Define the bot's credentials by importing them from info.py
+BOT_TOKEN = info.BOT_TOKEN
+API_ID = info.API_ID
+API_HASH = info.API_HASH
+SESSION = info.SESSION
+DATABASE_URI = info.DATABASE_URI
+LOG_CHANNEL = info.LOG_CHANNEL
+ADMIN = info.ADMIN
 
-# Initialize the app (Pyrogram Client)
-app = Client("movie_bot", bot_token=BOT_TOKEN, api_id=API_ID, api_hash=API_HASH)
+# Initialize the app (Pyrogram Client) using the credentials from info.py
+app = Client("movie_bot", bot_token=BOT_TOKEN, api_id=API_ID, api_hash=API_HASH, session_name=SESSION)
 
 def clean_query(query):
     """
