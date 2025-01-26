@@ -20,6 +20,14 @@ group_admins = {}  # Stores the admin user ID for each group
 pending_requests = defaultdict(list)  # Tracks pending movie requests for each group
 group_access_status = defaultdict(bool)  # Stores whether a group admin has completed the force-sub process
 
+# Define the bot's credentials
+BOT_TOKEN = "YOUR_BOT_TOKEN"
+API_ID = "29942004"
+API_HASH = "6765313019:AAHYLXnKN_q5dhznb-4IuLddejkCFleIUg8"
+
+# Initialize the app (Pyrogram Client)
+app = Client("movie_bot", bot_token=BOT_TOKEN, api_id=API_ID, api_hash=API_HASH)
+
 def clean_query(query):
     """
     Clean a user's search query by removing unwanted parts.
@@ -189,3 +197,6 @@ async def search_movies(client, message):
         await message.reply("\n".join(results))
     else:
         await message.reply("No matching movies found.")
+
+# Run the bot
+app.run()
