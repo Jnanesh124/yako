@@ -99,12 +99,19 @@ async def recheck(bot, update):
         return await update.answer("That's not for you! 👀", show_alert=True)
 
     m = await update.message.edit("Searching..💥")
-    id = update.data.split("_")[-1]
-    query = await search_imdb(id)
+    
+    # Extract movie ID from the callback data
+    try:
+        id = update.data.split("_")[-1]
+        query = await search_imdb(id)  # Retrieve corrected movie name from IMDb
+    except Exception as e:
+        return await m.edit(f"❌ Error: {str(e)}")
+
+    # Get group data (channels and banned channels)
     group_data = await get_group(update.message.chat.id)
     channels = group_data.get("channels", [])
     banned_channels = group_data.get("banned_channels", [])
-    
+
     head = "<b>👇 I Have Searched Movie With Wrong Spelling But Take care next time 👇</b>\n\n"
     results = ""
 
@@ -120,6 +127,7 @@ async def recheck(bot, update):
                     
                     name = (msg.text or msg.caption).split("\n")[0]
                     
+                    # Use fuzzy matching with a lower threshold (optional)
                     if fuzz.partial_ratio(query.lower(), name.lower()) < 70:
                         continue
                     
@@ -143,7 +151,6 @@ async def recheck(bot, update):
         await update.message.delete()
     except Exception as e:
         await update.message.edit(f"❌ Error: {e}")
-
 
 @Client.on_callback_query(filters.regex(r"^request"))
 async def request(bot, update):
