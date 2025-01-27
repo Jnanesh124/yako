@@ -5,9 +5,11 @@ from time import time
 from client import User
 from pyrogram import Client, filters 
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
+from rapidfuzz import fuzz, process  # Import fuzzy matching library
 
 # Auto-delete duration in seconds
 AUTO_DELETE_DURATION = 60  # Adjust this value as needed
+FUZZY_THRESHOLD = 50  # Set a threshold for fuzzy matching (0-100)
 
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
@@ -32,6 +34,14 @@ async def search(bot, message):
                
                async for msg in User.search_messages(chat_id=channel['id'], query=query):
                    name = (msg.text or msg.caption).split("\n")[0]
+                   
+                   # Fuzzy matching between the query and the message text
+                   similarity = fuzz.partial_ratio(query.lower(), name.lower())  # Compare with lowercased query and message
+
+                   if similarity < FUZZY_THRESHOLD:  # If similarity is below threshold, skip it
+                       continue
+
+                   # If the name has not been included in results, add it
                    if name in results:
                       continue 
                    results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
@@ -84,6 +94,14 @@ async def recheck(bot, update):
                
                async for msg in User.search_messages(chat_id=channel['id'], query=query):
                    name = (msg.text or msg.caption).split("\n")[0]
+                   
+                   # Fuzzy matching between the query and the message text
+                   similarity = fuzz.partial_ratio(query.lower(), name.lower())  # Compare with lowercased query and message
+
+                   if similarity < FUZZY_THRESHOLD:  # If similarity is below threshold, skip it
+                       continue
+
+                   # If the name has not been included in results, add it
                    if name in results:
                       continue 
                    results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
