@@ -1,12 +1,12 @@
 import asyncio
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from info import *
 from utils import *
 from time import time
 from client import User
-from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from fuzzywuzzy import fuzz, process
-import re
 
 # Auto-delete duration in seconds
 AUTO_DELETE_DURATION = 60  # Adjust this value as needed
@@ -33,12 +33,27 @@ async def search(bot, message):
 
     try:
         for channel in channels:
-            async for msg in User.search_messages(chat_id=channel, query=query):
-                name = (msg.text or msg.caption or "").split("\n")[0]
-                if name in results:
-                    continue
-                if fuzz.partial_ratio(query.lower(), name.lower()) > 70:
-                    results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+            try:
+                async for msg in User.search_messages(chat_id=channel, query=query):
+                    # Ensure that msg.text or msg.caption is not None before processing
+                    text = msg.text or msg.caption or ""
+                    name = text.split("\n")[0]
+
+                    # Ensure `name` is not empty and contains valid data
+                    if not name:
+                        continue
+
+                    if name in results:
+                        continue
+                    
+                    # Use fuzzy matching to find similar results
+                    if fuzz.partial_ratio(query.lower(), name.lower()) > 70:
+                        results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+            
+            except Exception as e:
+                # Log and skip inaccessible channels
+                print(f"Skipping channel {channel}: {e}")
+                continue
 
         if not results:
             # Use IMDb spelling check when no results are found in channels
@@ -64,62 +79,88 @@ async def search(bot, message):
         print(f"Error in search: {e}")  # Log the error for debugging
         await live_msg.edit_text(f"❌ An error occurred: {e}")
 
+
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
-    user_id = update.from_user.id
+    clicked = update.from_user.id
     try:
-        typed_user_id = update.message.reply_to_message.from_user.id
-    except AttributeError:
-        return await update.message.delete()
+        typed = update.message.reply_to_message.from_user.id
+    except:
+        return await update.message.delete()       
 
-    if user_id != typed_user_id:
+    if clicked != typed:
         return await update.answer("That's not for you! 👀", show_alert=True)
 
-    movie_id = update.data.split("_")[-1]
-    query = await search_imdb(movie_id)  # Fetch the movie name using its IMDb ID
+    m = await update.message.edit("Searching..💥")
+    id = update.data.split("_")[-1]
+    query = await search_imdb(id)
     channels = (await get_group(update.message.chat.id))["channels"]
+    head = "<b>👇 I Have Searched Movie With Wrong Spelling But Take care next time 👇</b>\n\n"
     results = ""
-    head = "<b>👇 Results for your corrected search 👇</b>\n\n"
 
     try:
         for channel in channels:
-            async for msg in User.search_messages(chat_id=channel, query=query):
-                name = (msg.text or msg.caption or "").split("\n")[0]
-                if name in results:
-                    continue
-                if fuzz.token_set_ratio(query.lower(), name.lower()) > 70:
-                    results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+            try:
+                async for msg in User.search_messages(chat_id=channel, query=query):
+                    # Ensure that msg.text or msg.caption is not None before processing
+                    text = msg.text or msg.caption or ""
+                    name = text.split("\n")[0]
+
+                    # Ensure `name` is not empty and contains valid data
+                    if not name:
+                        continue
+                    
+                    if name in results:
+                        continue
+                    
+                    # Use fuzzy matching to find similar results
+                    if fuzz.partial_ratio(query.lower(), name.lower()) > 70:
+                        results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+            
+            except Exception as e:
+                # Log and skip inaccessible channels
+                print(f"Skipping channel {channel}: {e}")
+                continue
 
         if not results:
-            await update.message.edit_text(
-                text="<blockquote>🥹 Sorry, no results found. Please try another query.</blockquote>"
+            return await update.message.edit(
+                "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>", 
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
             )
-        else:
-            await update.message.edit_text(text=head + results, disable_web_page_preview=True)
+        
+        await update.message.edit(text=head + results, disable_web_page_preview=True)
 
         # Auto-delete the message after the specified duration
         await asyncio.sleep(AUTO_DELETE_DURATION)
         await update.message.delete()
 
     except Exception as e:
-        await update.message.edit_text(f"❌ Error: {e}")
+        await update.message.edit(f"❌ Error: {e}")
 
-async def search_imdb(query):
-    """
-    Searches IMDb and returns a list of unique movies matching the query.
-    """
-    query = re.sub(r"\s+", " ", query.strip().lower())  # Normalize query
-    # Mock IMDb search results (replace with your actual IMDb search logic)
-    results = [
-        {"id": "tt1234567", "title": "K.G.F: Chapter 2"},
-        {"id": "tt7654321", "title": "K.G.F: Chapter 1"},
-        {"id": "tt2233445", "title": "K.G.F: Chapter 2"}  # Duplicate title example
-    ]
-    matches = process.extract(query, [movie["title"] for movie in results], scorer=fuzz.token_set_ratio, limit=5)
-    unique_titles = set()
-    filtered_results = []
-    for movie_title, score, idx in matches:
-        if score >= 70 and results[idx]["title"] not in unique_titles:
-            unique_titles.add(results[idx]["title"])
-            filtered_results.append({"id": results[idx]["id"], "title": results[idx]["title"]})
-    return filtered_results
+
+@Client.on_callback_query(filters.regex(r"^request"))
+async def request(bot, update):
+    clicked = update.from_user.id
+    try:
+        typed = update.message.reply_to_message.from_user.id
+    except:
+        return await update.message.delete()       
+
+    if clicked != typed:
+        return await update.answer("That's not for you! 👀", show_alert=True)
+
+    admin = (await get_group(update.message.chat.id))["user_id"]
+    id = update.data.split("_")[1]
+    name = await search_imdb(id)
+    url = "https://www.imdb.com/title/tt" + id
+    text = f"#RequestFromYourGroup\n\nName: {name}\nIMDb: {url}"
+    
+    msg = await bot.send_message(chat_id=admin, text=text, disable_web_page_preview=True)
+
+    # Auto-delete the message after the specified duration
+    await asyncio.sleep(AUTO_DELETE_DURATION)
+    await msg.delete()
+
+    await update.answer("✅ Request Sent To Admin", show_alert=True)
+    await update.message.delete()
+
