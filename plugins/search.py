@@ -1,4 +1,5 @@
 import asyncio
+import requests
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 from pyrogram import Client, filters
@@ -8,8 +9,36 @@ from utils import *
 from time import time
 from client import User
 
+# Set your OMDb API key (from OMDb)
+OMDB_API_KEY = "70e15abb"  # Your OMDb API key
+
 # Auto-delete duration in seconds
 AUTO_DELETE_DURATION = 60  # Adjust this value as needed
+
+async def search_imdb(query):
+    """Search IMDb using OMDb API."""
+    try:
+        # Build the API request URL
+        url = f"http://www.omdbapi.com/?s={query}&apikey={OMDB_API_KEY}"
+        
+        # Make a request to OMDb API
+        response = requests.get(url)
+        data = response.json()
+
+        # Check if the API returned results
+        if data.get("Response") == "True":
+            movies = []
+            for movie in data["Search"][:3]:  # Limit to top 3 results
+                movies.append({
+                    'id': movie['imdbID'],
+                    'title': movie['Title']
+                })
+            return movies
+        else:
+            return []  # No results found
+    except Exception as e:
+        print(f"Error in IMDb search: {e}")
+        return []
 
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
@@ -160,26 +189,3 @@ async def request(bot, update):
 
     await update.answer("✅ Request Sent To Admin", show_alert=True)
     await update.message.delete()
-
-
-async def search_imdb(query):
-    """Search IMDb for a movie or series based on a query."""
-    try:
-        movies = []
-        # Use a more refined query search, removing extra words like 'language' or 'year'
-        cleaned_query = ' '.join([word for word in query.split() if word.lower() not in ['kannada', 'tamil', 'year', '2019', '2024']])
-
-        # Assuming a function `imdb_search` exists that returns results in a suitable format
-        search_results = await imdb_search(cleaned_query)
-        
-        for result in search_results:
-            # Return top 3 results from IMDb (adjust according to your logic)
-            movies.append({
-                'id': result['id'],
-                'title': result['title']
-            })
-
-        return movies
-    except Exception as e:
-        print(f"Error in IMDb search: {e}")
-        return []
