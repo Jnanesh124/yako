@@ -38,22 +38,29 @@ async def search(bot, message):
                continue  # Skip this channel and proceed with the next one
 
        if not results:
+          # No results found, show IMDb button
           movies = await search_imdb(query)
           buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
           msg = await message.reply_text(
               text="<blockquote>😔 Only Type Movie Name 😔</blockquote>", 
               reply_markup=InlineKeyboardMarkup(buttons)
            )
+          # Delete the searching message immediately after showing IMDb options
+          await searching_msg.delete()
+
           # Auto-delete the IMDb message after the specified duration
           await asyncio.sleep(AUTO_DELETE_DURATION)
           await msg.delete()
 
        else:
+          # Results found, show them
           msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
+          # Delete the searching message immediately after showing results
+          await searching_msg.delete()
 
-       # Always delete the searching message after showing the results or IMDb options
+       # Auto-delete the result message (whether IMDb buttons or search results)
        await asyncio.sleep(AUTO_DELETE_DURATION)
-       await searching_msg.delete()
+       await msg.delete()
 
     except Exception as e:
        print(f"Error in search: {e}")  # Log the error for debugging
