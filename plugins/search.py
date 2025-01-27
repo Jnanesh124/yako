@@ -44,21 +44,24 @@ async def search(bot, message):
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     if not msg.text and not msg.caption:
                         continue
-                    
+
                     name = (msg.text or msg.caption).split("\n")[0]
-                    
+
                     # Use fuzzy matching to improve accuracy
-                    if fuzz.partial_ratio(query.lower(), name.lower()) < 70:
+                    if fuzz.partial_ratio(query.lower(), name.lower()) < 1:
                         continue
-                    
+
                     if name in results:
                         continue
-                    
+
                     results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
 
             except ChannelInvalid:
                 print(f"Skipping invalid channel: {channel}")
                 continue  # Skip this channel and continue with others
+
+        # Ensure the "Searching" message is deleted before sending results or fallback
+        await searching_msg.delete()
 
         if not results:
             movies = await search_imdb(query)
@@ -70,15 +73,18 @@ async def search(bot, message):
         else:
             msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
-        # Auto-delete the message after the specified duration
+        # Auto-delete the result message after the specified duration
         await asyncio.sleep(AUTO_DELETE_DURATION)
         await msg.delete()
     except Exception as e:
         print(f"Error in search: {e}")
         await message.reply_text("❌ An error occurred while searching.")
     finally:
-        # Delete the "Searching" message
-        await searching_msg.delete()
+        # Delete the "Searching" message if it still exists (fallback safeguard)
+        try:
+            await searching_msg.delete()
+        except:
+            pass
 
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
