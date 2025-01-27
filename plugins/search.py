@@ -35,6 +35,9 @@ async def search(bot, message):
         for channel in channels:
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
+                    # Log the channel name and ID for debugging
+                    print(f"Searching in channel: {channel} (ID: {channel})")
+
                     # Ensure that msg.text or msg.caption is not None before processing
                     text = msg.text or msg.caption or ""
                     name = text.split("\n")[0]
@@ -43,10 +46,7 @@ async def search(bot, message):
                     if not name:
                         continue
 
-                    if name in results:
-                        continue
-                    
-                    # Use fuzzy matching to find similar results
+                    # Use fuzzy matching to find similar results (allow for variations like year, language)
                     if fuzz.partial_ratio(query.lower(), name.lower()) > 70:
                         results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
             
@@ -110,10 +110,7 @@ async def recheck(bot, update):
                     if not name:
                         continue
                     
-                    if name in results:
-                        continue
-                    
-                    # Use fuzzy matching to find similar results
+                    # Use fuzzy matching to find similar results (allow for variations like year, language)
                     if fuzz.partial_ratio(query.lower(), name.lower()) > 70:
                         results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
             
@@ -164,3 +161,25 @@ async def request(bot, update):
     await update.answer("✅ Request Sent To Admin", show_alert=True)
     await update.message.delete()
 
+
+async def search_imdb(query):
+    """Search IMDb for a movie or series based on a query."""
+    try:
+        movies = []
+        # Use a more refined query search, removing extra words like 'language' or 'year'
+        cleaned_query = ' '.join([word for word in query.split() if word.lower() not in ['kannada', 'tamil', 'year', '2019', '2024']])
+
+        # Assuming a function `imdb_search` exists that returns results in a suitable format
+        search_results = await imdb_search(cleaned_query)
+        
+        for result in search_results:
+            # Return top 3 results from IMDb (adjust according to your logic)
+            movies.append({
+                'id': result['id'],
+                'title': result['title']
+            })
+
+        return movies
+    except Exception as e:
+        print(f"Error in IMDb search: {e}")
+        return []
