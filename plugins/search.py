@@ -5,11 +5,9 @@ from time import time
 from client import User
 from pyrogram import Client, filters 
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
-from rapidfuzz import fuzz, process  # Import fuzzy matching library
 
 # Auto-delete duration in seconds
 AUTO_DELETE_DURATION = 60  # Adjust this value as needed
-FUZZY_THRESHOLD = 50  # Set a threshold for fuzzy matching (0-100)
 
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
@@ -25,30 +23,19 @@ async def search(bot, message):
     query = message.text 
     head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
     results = ""
+    searching_msg = await message.reply_text(text=f"Searching {query}... 💥", disable_web_page_preview=True)
 
     try:
        for channel in channels:
            try:
-               # Log channel name and ID
-               print(f"Searching in channel: {channel['name']} (ID: {channel['id']})")
-               
-               async for msg in User.search_messages(chat_id=channel['id'], query=query):
+               async for msg in User.search_messages(chat_id=channel, query=query):
                    name = (msg.text or msg.caption).split("\n")[0]
-                   
-                   # Fuzzy matching between the query and the message text
-                   similarity = fuzz.partial_ratio(query.lower(), name.lower())  # Compare with lowercased query and message
-
-                   if similarity < FUZZY_THRESHOLD:  # If similarity is below threshold, skip it
-                       continue
-
-                   # If the name has not been included in results, add it
                    if name in results:
                       continue 
                    results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
            except Exception as e:
-               # If error occurs in a channel, log and skip it
-               print(f"Error in channel {channel['name']} (ID: {channel['id']}): {e}")
-               continue  # Skip this channel and continue searching in the remaining ones
+               print(f"Error accessing channel {channel}: {e}")
+               continue  # Skip this channel and proceed with the next one
 
        if not results:
           movies = await search_imdb(query)
@@ -57,12 +44,16 @@ async def search(bot, message):
               text="<blockquote>😔 Only Type Movie Name 😔</blockquote>", 
               reply_markup=InlineKeyboardMarkup(buttons)
            )
+          # Auto-delete the IMDb message after the specified duration
+          await asyncio.sleep(AUTO_DELETE_DURATION)
+          await msg.delete()
+
        else:
           msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
-       # Auto-delete the message after the specified duration
+       # Always delete the searching message after showing the results or IMDb options
        await asyncio.sleep(AUTO_DELETE_DURATION)
-       await msg.delete()
+       await searching_msg.delete()
 
     except Exception as e:
        print(f"Error in search: {e}")  # Log the error for debugging
@@ -89,32 +80,21 @@ async def recheck(bot, update):
     try:
        for channel in channels:
            try:
-               # Log channel name and ID
-               print(f"Searching in channel: {channel['name']} (ID: {channel['id']})")
-               
-               async for msg in User.search_messages(chat_id=channel['id'], query=query):
+               async for msg in User.search_messages(chat_id=channel, query=query):
                    name = (msg.text or msg.caption).split("\n")[0]
-                   
-                   # Fuzzy matching between the query and the message text
-                   similarity = fuzz.partial_ratio(query.lower(), name.lower())  # Compare with lowercased query and message
-
-                   if similarity < FUZZY_THRESHOLD:  # If similarity is below threshold, skip it
-                       continue
-
-                   # If the name has not been included in results, add it
                    if name in results:
                       continue 
                    results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
            except Exception as e:
-               # If error occurs in a channel, log and skip it
-               print(f"Error in channel {channel['name']} (ID: {channel['id']}): {e}")
-               continue  # Skip this channel and continue searching in the remaining ones
+               print(f"Error accessing channel {channel}: {e}")
+               continue  # Skip this channel and proceed with the next one
 
        if not results:          
-          return await update.message.edit(
+          await update.message.edit(
               "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>", 
               reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]]))
-       await update.message.edit(text=head + results, disable_web_page_preview=True)
+       else:
+          await update.message.edit(text=head + results, disable_web_page_preview=True)
 
        # Auto-delete the message after the specified duration
        await asyncio.sleep(AUTO_DELETE_DURATION)
