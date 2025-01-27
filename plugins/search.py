@@ -5,7 +5,7 @@ from time import time
 from client import User
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from fuzzywuzzy import fuzz
+from fuzzywuzzy import fuzz  # Ensure fuzzywuzzy is correctly imported
 
 # Auto-delete duration in seconds
 AUTO_DELETE_DURATION = 60  # Adjust this value as needed
@@ -16,8 +16,11 @@ async def search(bot, message):
     if not f_sub:
         return
 
-    channels = (await get_group(message.chat.id))["channels"]
-    banned_channels = (await get_group(message.chat.id))["banned_channels"]  # List of banned channels
+    # Safe access to 'channels' and 'banned_channels' using get to avoid KeyError
+    group_data = await get_group(message.chat.id)
+    channels = group_data.get("channels", [])  # Default to empty list if 'channels' is missing
+    banned_channels = group_data.get("banned_channels", [])  # Default to empty list if 'banned_channels' is missing
+
     if not channels:
         return
     if message.text.startswith("/"):
@@ -86,8 +89,10 @@ async def recheck(bot, update):
     m = await update.message.edit("Searching..💥")
     id = update.data.split("_")[-1]
     query = await search_imdb(id)
-    channels = (await get_group(update.message.chat.id))["channels"]
-    banned_channels = (await get_group(update.message.chat.id))["banned_channels"]
+    group_data = await get_group(update.message.chat.id)
+    channels = group_data.get("channels", [])
+    banned_channels = group_data.get("banned_channels", [])
+    
     head = "<b>👇 I Have Searched Movie With Wrong Spelling But Take care next time 👇</b>\n\n"
     results = ""
 
@@ -113,8 +118,8 @@ async def recheck(bot, update):
         if not results:
             return await update.message.edit(
                 "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇 Bot To Get Direct FILE📥</blockquote>",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
-            )
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]]))
+        
         await update.message.edit(text=head + results, disable_web_page_preview=True)
 
         # Auto-delete the message after the specified duration
