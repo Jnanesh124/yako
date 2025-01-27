@@ -5,7 +5,8 @@ from time import time
 from client import User
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from fuzzywuzzy import fuzz  # Ensure fuzzywuzzy is correctly imported
+from fuzzywuzzy import fuzz
+from pyrogram.errors import ChannelInvalid, FloodWait  # Import relevant exceptions
 
 # Auto-delete duration in seconds
 AUTO_DELETE_DURATION = 60  # Adjust this value as needed
@@ -39,20 +40,25 @@ async def search(bot, message):
             # Log channel name and ID
             print(f"Searching in channel: {channel}")
 
-            async for msg in User.search_messages(chat_id=channel, query=query):
-                if not msg.text and not msg.caption:
-                    continue
-                
-                name = (msg.text or msg.caption).split("\n")[0]
-                
-                # Use fuzzy matching to improve accuracy
-                if fuzz.partial_ratio(query.lower(), name.lower()) < 70:
-                    continue
-                
-                if name in results:
-                    continue
-                
-                results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+            try:
+                async for msg in User.search_messages(chat_id=channel, query=query):
+                    if not msg.text and not msg.caption:
+                        continue
+                    
+                    name = (msg.text or msg.caption).split("\n")[0]
+                    
+                    # Use fuzzy matching to improve accuracy
+                    if fuzz.partial_ratio(query.lower(), name.lower()) < 70:
+                        continue
+                    
+                    if name in results:
+                        continue
+                    
+                    results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+
+            except ChannelInvalid:
+                print(f"Skipping invalid channel: {channel}")
+                continue  # Skip this channel and continue with others
 
         if not results:
             movies = await search_imdb(query)
@@ -101,19 +107,23 @@ async def recheck(bot, update):
             if channel in banned_channels:
                 continue
 
-            async for msg in User.search_messages(chat_id=channel, query=query):
-                if not msg.text and not msg.caption:
-                    continue
-                
-                name = (msg.text or msg.caption).split("\n")[0]
-                
-                if fuzz.partial_ratio(query.lower(), name.lower()) < 70:
-                    continue
-                
-                if name in results:
-                    continue
-                
-                results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+            try:
+                async for msg in User.search_messages(chat_id=channel, query=query):
+                    if not msg.text and not msg.caption:
+                        continue
+                    
+                    name = (msg.text or msg.caption).split("\n")[0]
+                    
+                    if fuzz.partial_ratio(query.lower(), name.lower()) < 70:
+                        continue
+                    
+                    if name in results:
+                        continue
+                    
+                    results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+            except ChannelInvalid:
+                print(f"Skipping invalid channel: {channel}")
+                continue  # Skip this channel and continue with others
 
         if not results:
             return await update.message.edit(
