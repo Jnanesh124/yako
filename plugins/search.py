@@ -28,7 +28,7 @@ async def search(bot, message):
         return
 
     query = message.text
-    searching_msg = await message.reply_text(f"🔍 Searching for '{query}'...")
+    searching_msg = await message.reply_text(f"🔍 Searching for '{query}'")
     results = ""
     head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
 
@@ -48,7 +48,7 @@ async def search(bot, message):
                     name = (msg.text or msg.caption).split("\n")[0]
 
                     # Use fuzzy matching to improve accuracy
-                    if fuzz.partial_ratio(query.lower(), name.lower()) < 1:
+                    if fuzz.partial_ratio(query.lower(), name.lower()) < 70:
                         continue
 
                     if name in results:
