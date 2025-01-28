@@ -46,88 +46,72 @@ def is_valid_movie_name(text):
 async def search(bot, message):
     if not is_valid_movie_name(message.text):  # If the message contains a link or @, ignore it
         return
-    
-    f_sub = await force_sub(bot, message)
-    if not f_sub:
-        return     
-    channels = (await get_group(message.chat.id))["channels"]
-    if not channels:
-        return     
-    if message.text.startswith("/"):
-        return    
-
-    query = message.text.strip()
-    head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
-    results = ""
-    searching_msg = await message.reply_text(text=f"Searching {query}... 💥", disable_web_page_preview=True)
 
     try:
-        # Handle extra words like "dubbed", "tamil", etc., by stripping them
-        query = re.sub(r"\s*(dubbed|tamil|english|sub|full\s*movie)\s*", "", query, flags=re.IGNORECASE)
+        f_sub = await force_sub(bot, message)
+        if not f_sub:
+            return
 
-        # To simulate the process, we will store the results in a list and rank them
-        result_details = []
+        channels = (await get_group(message.chat.id))["channels"]
+        if not channels:
+            return
 
-        for channel in channels:
-            try:
-                async for msg in User.search_messages(chat_id=channel, query=query):
-                    name = (msg.text or msg.caption).split("\n")[0]
-                    if name not in results:
-                        # 1. Calculate Levenshtein Distance
-                        levenshtein_score = levenshtein_distance(query.lower(), name.lower())
-                        
-                        # 2. Calculate Token-based Matching score
-                        token_score = token_based_matching(query, name)
+        if message.text.startswith("/"):
+            return
 
-                        # 3. Check threshold for similarity and calculate final score
-                        passes_threshold, final_score_value = threshold_for_similarity(levenshtein_score, token_score)
-                        
-                        # 4. Show live statistics: Update message with stats for each technique
-                        await searching_msg.edit(
-                            f"Searching...\n\n"
-                            f"Levenshtein Score: {levenshtein_score}%\n"
-                            f"Token Score: {token_score}%\n"
-                            f"Threshold Passed: {'Yes' if passes_threshold else 'No'}\n"
-                            f"Final Score: {final_score_value}%\n"
-                            f"Comparing: {name}"
-                        )
-                        
-                        # Only consider results above the threshold (e.g., 75)
-                        if passes_threshold:
-                            result_details.append((name, final_score_value, msg.link))
+        query = message.text.strip()
+        head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
+        results = ""
+        searching_msg = await message.reply_text(text=f"Searching {query}... 💥", disable_web_page_preview=True)
 
-            except Exception as e:
-                print(f"Error accessing channel {channel}: {e}")
-                continue  # Skip this channel and proceed with the next one
+        try:
+            # Handle extra words like "dubbed", "tamil", etc., by stripping them
+            query = re.sub(r"\s*(dubbed|tamil|english|sub|full\s*movie)\s*", "", query, flags=re.IGNORECASE)
 
-        # Sort results by final score in descending order (highest score first)
-        result_details = ranking_results(result_details)
+            for channel in channels:
+                try:
+                    async for msg in User.search_messages(chat_id=channel, query=query):
+                        name = (msg.text or msg.caption).split("\n")[0]
+                        if name in results:
+                            continue
+                        results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+                except Exception as e:
+                    print(f"Error accessing channel {channel}: {e}")  # Log specific channel error
+                    continue  # Skip this channel and proceed with the next one
 
-        if result_details:
-            # Display ranked results
-            for name, score, link in result_details:
-                results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{link}'>DOWNLOAD</a> 👈🏻</strong>\nScore: {score}%\n\n"
-            
-            msg = await message.reply_text(text=f"<blockquote>👀 Here are the results 👀</blockquote>\n\n{results}", disable_web_page_preview=True)
-        else:
-            # No results found, show IMDb button
-            movies = await search_imdb(query)
-            buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
-            msg = await message.reply_text(
-                text="<blockquote>😔 No match found. Check out these IMDb suggestions:</blockquote>", 
-                reply_markup=InlineKeyboardMarkup(buttons)
-            )
+            if not results:
+                # No results found, show IMDb button
+                movies = await search_imdb(query)
+                buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
+                msg = await message.reply_text(
+                    text="<blockquote>😔 Only Type Movie Name 😔</blockquote>", 
+                    reply_markup=InlineKeyboardMarkup(buttons)
+                )
+                # Delete the searching message immediately after showing IMDb options
+                await searching_msg.delete()
 
-        # Delete the searching message after showing the results
-        await searching_msg.delete()
+                # Auto-delete the IMDb message after the specified duration
+                await asyncio.sleep(AUTO_DELETE_DURATION)
+                await msg.delete()
 
-        # Auto-delete the result message after the specified duration
-        await asyncio.sleep(AUTO_DELETE_DURATION)
-        await msg.delete()
+            else:
+                # Results found, show them
+                msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
+                # Delete the searching message immediately after showing results
+                await searching_msg.delete()
+
+            # Auto-delete the result message (whether IMDb buttons or search results)
+            await asyncio.sleep(AUTO_DELETE_DURATION)
+            await msg.delete()
+
+        except Exception as e:
+            print(f"Error during the search process: {e}")  # More detailed logging
+            await message.reply_text("Error occurred during search. Please try again later.")
+            return
 
     except Exception as e:
-        print(f"Error in search: {e}")  # Log the error for debugging
-        await searching_msg.edit("❌ Error occurred during search.")
+        print(f"Error: {e}")  # Log high-level errors for the function
+        await message.reply_text("An unexpected error occurred. Please try again.")
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
