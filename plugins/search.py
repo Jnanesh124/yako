@@ -5,7 +5,7 @@ from time import time
 from client import User
 from pyrogram import Client, filters 
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.errors import ChannelPrivateError, PeerIdInvalid
+from pyrogram.errors import ChannelPrivate, PeerIdInvalid
 import difflib  # For fuzzy matching
 
 # Auto-delete duration in seconds
