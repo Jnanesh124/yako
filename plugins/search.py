@@ -4,125 +4,96 @@ from utils import *
 from time import time 
 from client import User
 from pyrogram import Client, filters 
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
-import re  # We need to use regular expressions for pattern matching
-from fuzzywuzzy import fuzz
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.errors import ChannelPrivateError, PeerIdInvalid
+import difflib  # For fuzzy matching
 
 # Auto-delete duration in seconds
 AUTO_DELETE_DURATION = 60  # Adjust this value as needed
 
-# Helper functions for fuzzy search
-def levenshtein_distance(str1, str2):
-    """Calculates Levenshtein distance between two strings."""
-    return fuzz.ratio(str1, str2)
+def token_match(query, movie_name):
+    """
+    Token-based fuzzy matching function. Breaks both the query and movie title into tokens and compares them using fuzzy matching.
+    """
+    # Tokenize the query and movie title by splitting by spaces
+    query_tokens = query.lower().split()
+    movie_tokens = movie_name.lower().split()
 
-def token_based_matching(query, name):
-    """Token-based fuzzy matching."""
-    query_tokens = query.split()
-    name_tokens = name.split()
-    match_score = 0
+    # Compare tokens using difflib's SequenceMatcher for fuzzy matching
+    matched_tokens = 0
     for token in query_tokens:
-        for name_token in name_tokens:
-            match_score += fuzz.ratio(token.lower(), name_token.lower())
-    return match_score / len(query_tokens)  # average similarity of all tokens
+        # Check for similarity with each token in the movie name
+        for movie_token in movie_tokens:
+            similarity = difflib.SequenceMatcher(None, token, movie_token).ratio()
+            if similarity > 0.7:  # You can adjust this threshold for more or less strict matching
+                matched_tokens += 1
+                break  # Stop after finding one matching token
 
-def threshold_for_similarity(levenshtein_score, token_score):
-    """Threshold check for similarity."""
-    final_score = (levenshtein_score + token_score) / 2  # average score
-    return final_score >= 75, final_score  # Return if it passes threshold and the final score
-
-def ranking_results(result_details):
-    """Rank results based on their final score."""
-    return sorted(result_details, key=lambda x: x[1], reverse=True)  # Sort by final score (highest first)
-
-def is_valid_movie_name(text):
-    """Check if the message contains only valid text (no links, @, or #)."""
-    # Check for links, @ or #
-    if re.search(r"(https?://|www\.|@|#)", text):
-        return False
-    return True
+    # If a sufficient number of tokens match, return True
+    return matched_tokens >= len(query_tokens) // 2  # Match at least half of the tokens
 
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
-    if not is_valid_movie_name(message.text):  # If the message contains a link or @, ignore it
-        return
+    f_sub = await force_sub(bot, message)
+    if not f_sub:
+       return     
+    channels = (await get_group(message.chat.id))["channels"]
+    if not channels:
+       return     
+    if message.text.startswith("/"):
+       return    
+
+    query = message.text 
+    head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
+    results = ""
 
     try:
-        f_sub = await force_sub(bot, message)
-        if not f_sub:
-            return
+       for channel in channels:
+           # Check if the bot can access the channel, handle potential errors
+           try:
+               async for msg in User.search_messages(chat_id=channel, query=query):
+                   name = (msg.text or msg.caption).split("\n")[0]
+                   
+                   # Use token-based fuzzy matching here
+                   if token_match(query, name):
+                       if name in results:
+                          continue 
+                       results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+           except (ChannelPrivateError, PeerIdInvalid) as e:
+               print(f"Channel {channel} is inaccessible or banned, skipping...")
+               continue  # Skip this channel if it’s private or invalid
+           except Exception as e:
+               print(f"Error accessing channel {channel}: {e}")
+               continue  # Skip this channel on any other error
 
-        channels = (await get_group(message.chat.id))["channels"]
-        if not channels:
-            return
+       if not results:
+          movies = await search_imdb(query)
+          buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
+          msg = await message.reply_text(
+              text="<blockquote>😔 Only Type Movie Name 😔</blockquote>", 
+              reply_markup=InlineKeyboardMarkup(buttons)
+           )
+       else:
+          msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
-        if message.text.startswith("/"):
-            return
-
-        query = message.text.strip()
-        head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
-        results = ""
-        searching_msg = await message.reply_text(text=f"Searching {query}... 💥", disable_web_page_preview=True)
-
-        try:
-            # Handle extra words like "dubbed", "tamil", etc., by stripping them
-            query = re.sub(r"\s*(dubbed|tamil|english|sub|full\s*movie)\s*", "", query, flags=re.IGNORECASE)
-
-            for channel in channels:
-                try:
-                    async for msg in User.search_messages(chat_id=channel, query=query):
-                        name = (msg.text or msg.caption).split("\n")[0]
-                        if name in results:
-                            continue
-                        results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
-                except Exception as e:
-                    print(f"Error accessing channel {channel}: {e}")  # Log specific channel error
-                    continue  # Skip this channel and proceed with the next one
-
-            if not results:
-                # No results found, show IMDb button
-                movies = await search_imdb(query)
-                buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
-                msg = await message.reply_text(
-                    text="<blockquote>😔 Only Type Movie Name 😔</blockquote>", 
-                    reply_markup=InlineKeyboardMarkup(buttons)
-                )
-                # Delete the searching message immediately after showing IMDb options
-                await searching_msg.delete()
-
-                # Auto-delete the IMDb message after the specified duration
-                await asyncio.sleep(AUTO_DELETE_DURATION)
-                await msg.delete()
-
-            else:
-                # Results found, show them
-                msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
-                # Delete the searching message immediately after showing results
-                await searching_msg.delete()
-
-            # Auto-delete the result message (whether IMDb buttons or search results)
-            await asyncio.sleep(AUTO_DELETE_DURATION)
-            await msg.delete()
-
-        except Exception as e:
-            print(f"Error during the search process: {e}")  # More detailed logging
-            await message.reply_text("Error occurred during search. Please try again later.")
-            return
+       # Auto-delete the message after the specified duration
+       await asyncio.sleep(AUTO_DELETE_DURATION)
+       await msg.delete()
 
     except Exception as e:
-        print(f"Error: {e}")  # Log high-level errors for the function
-        await message.reply_text("An unexpected error occurred. Please try again.")
+       print(f"Error in search: {e}")  # Log the error for debugging
+
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
     clicked = update.from_user.id
     try:      
-        typed = update.message.reply_to_message.from_user.id
+       typed = update.message.reply_to_message.from_user.id
     except:
-        return await update.message.delete()       
+       return await update.message.delete()       
 
     if clicked != typed:
-        return await update.answer("That's not for you! 👀", show_alert=True)
+       return await update.answer("That's not for you! 👀", show_alert=True)
 
     m = await update.message.edit("Searching..💥")
     id = update.data.split("_")[-1]
@@ -132,41 +103,48 @@ async def recheck(bot, update):
     results = ""
 
     try:
-        for channel in channels:
-            try:
-                async for msg in User.search_messages(chat_id=channel, query=query):
-                    name = (msg.text or msg.caption).split("\n")[0]
-                    if name in results:
-                        continue 
-                    results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
-            except Exception as e:
-                print(f"Error accessing channel {channel}: {e}")
-                continue  # Skip this channel and proceed with the next one
+       for channel in channels:
+           # Check if the bot can access the channel, handle potential errors
+           try:
+               async for msg in User.search_messages(chat_id=channel, query=query):
+                   name = (msg.text or msg.caption).split("\n")[0]
+                   
+                   # Use token-based fuzzy matching here
+                   if token_match(query, name):
+                       if name in results:
+                          continue 
+                       results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+           except (ChannelPrivateError, PeerIdInvalid) as e:
+               print(f"Channel {channel} is inaccessible or banned, skipping...")
+               continue  # Skip this channel if it’s private or invalid
+           except Exception as e:
+               print(f"Error accessing channel {channel}: {e}")
+               continue  # Skip this channel on any other error
 
-        if not results:          
-            await update.message.edit(
-                "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>", 
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]]))
-        else:
-            await update.message.edit(text=head + results, disable_web_page_preview=True)
+       if not results:          
+          return await update.message.edit(
+              "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>", 
+              reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]]))
+       await update.message.edit(text=head + results, disable_web_page_preview=True)
 
-        # Auto-delete the message after the specified duration
-        await asyncio.sleep(AUTO_DELETE_DURATION)
-        await update.message.delete()
+       # Auto-delete the message after the specified duration
+       await asyncio.sleep(AUTO_DELETE_DURATION)
+       await update.message.delete()
 
     except Exception as e:
-        await update.message.edit(f"❌ Error: {e}")
+       await update.message.edit(f"❌ Error: {e}")
+
 
 @Client.on_callback_query(filters.regex(r"^request"))
 async def request(bot, update):
     clicked = update.from_user.id
     try:      
-        typed = update.message.reply_to_message.from_user.id
+       typed = update.message.reply_to_message.from_user.id
     except:
-        return await update.message.delete()       
+       return await update.message.delete()       
 
     if clicked != typed:
-        return await update.answer("That's not for you! 👀", show_alert=True)
+       return await update.answer("That's not for you! 👀", show_alert=True)
 
     admin = (await get_group(update.message.chat.id))["user_id"]
     id = update.data.split("_")[1]
