@@ -1,11 +1,20 @@
 from info import *
 from utils import *
-from client import User 
+from client import User
 from pyrogram import Client, filters
+from pyrogram.types import ChatMember
+
+# Helper function to check admin status
+async def is_admin(bot, chat_id, user_id):
+    try:
+        member = await bot.get_chat_member(chat_id, user_id)
+        return member.status in ["administrator", "creator"]
+    except:
+        return False
 
 @Client.on_message(filters.group & filters.command("connect"))
 async def connect(bot, message):
-    m = await message.reply("connecting...")
+    m = await message.reply("Connecting...")
     user = await User.get_me()
     try:
         group = await get_group(message.chat.id)
@@ -16,12 +25,11 @@ async def connect(bot, message):
     except:
         return await bot.leave_chat(message.chat.id)
     
-    # Check if the user is an admin
-    member = await bot.get_chat_member(message.chat.id, message.from_user.id)
-    if not (member.is_chat_admin() or message.from_user.id == user_id):
+    # Check if the user is an admin or the group owner
+    if not (await is_admin(bot, message.chat.id, message.from_user.id) or message.from_user.id == user_id):
         return await m.edit(f"Only {user_name} or group admins can use this command 😁")
     
-    if bool(verified) == False:
+    if not verified:
         return await m.edit("This chat is not verified!\nUse /verify")
     
     try:
@@ -42,7 +50,8 @@ async def connect(bot, message):
         if "The user is already a participant" in str(e):
             pass
         else:
-            text = f"❌ Error: {str(e)}\nMake sure I'm an admin in that channel & this group with all permissions and {(user.username or user.mention)} is not banned there"
+            text = (f"❌ Error: {str(e)}\nMake sure I'm an admin in that channel & this group "
+                    f"with all permissions and {(user.username or user.mention)} is not banned there.")
             return await m.edit(text)
     
     await update_group(message.chat.id, {"channels": channels})
@@ -63,18 +72,17 @@ async def disconnect(bot, message):
     except:
         return await bot.leave_chat(message.chat.id)
     
-    # Check if the user is an admin
-    member = await bot.get_chat_member(message.chat.id, message.from_user.id)
-    if not (member.is_chat_admin() or message.from_user.id == user_id):
+    # Check if the user is an admin or the group owner
+    if not (await is_admin(bot, message.chat.id, message.from_user.id) or message.from_user.id == user_id):
         return await m.edit(f"Only {user_name} or group admins can use this command 😁")
     
-    if bool(verified) == False:
+    if not verified:
         return await m.edit("This chat is not verified!\nUse /verify")
     
     try:
         channel = int(message.command[-1])
         if channel not in channels:
-            return await m.edit("You didn't add this channel yet or check the Channel ID.")
+            return await m.edit("This channel is not connected or check the Channel ID.")
         channels.remove(channel)
     except:
         return await m.edit("❌ Incorrect format!\nUse /disconnect ChannelID")
@@ -86,7 +94,8 @@ async def disconnect(bot, message):
         g_link = group.invite_link
         await User.leave_chat(channel)
     except Exception as e:
-        text = f"❌ Error: {str(e)}\nMake sure I'm an admin in that channel & this group with all permissions and {(user.username or user.mention)} is not banned there"
+        text = (f"❌ Error: {str(e)}\nMake sure I'm an admin in that channel & this group "
+                f"with all permissions and {(user.username or user.mention)} is not banned there.")
         return await m.edit(text)
     
     await update_group(message.chat.id, {"channels": channels})
@@ -103,12 +112,11 @@ async def connections(bot, message):
     channels = group["channels"]
     f_sub = group["f_sub"]
     
-    # Check if the user is an admin
-    member = await bot.get_chat_member(message.chat.id, message.from_user.id)
-    if not (member.is_chat_admin() or message.from_user.id == user_id):
+    # Check if the user is an admin or the group owner
+    if not (await is_admin(bot, message.chat.id, message.from_user.id) or message.from_user.id == user_id):
         return await message.reply(f"Only {user_name} or group admins can use this command 😁")
     
-    if bool(channels) == False:
+    if not channels:
         return await message.reply("This group is currently not connected to any channels!\nConnect one using /connect")
     
     text = "This Group is currently connected to:\n\n"
@@ -121,13 +129,13 @@ async def connections(bot, message):
         except Exception as e:
             await message.reply(f"❌ Error in {channel}:\n{e}")
     
-    if bool(f_sub):
+    if f_sub:
         try:
-            f_chat = await bot.get_chat(channel)
+            f_chat = await bot.get_chat(f_sub)
             f_title = f_chat.title
             f_link = f_chat.invite_link
             text += f"\nFSub: [{f_title}]({f_link})"
         except Exception as e:
-            await message.reply(f"❌ Error in FSub ({f_sub})\n{e}")
+            await message.reply(f"❌ Error in FSub ({f_sub}): {e}")
     
     await message.reply(text=text, disable_web_page_preview=True)
