@@ -11,7 +11,7 @@ import difflib  # For fuzzy matching
 
 AUTO_DELETE_DURATION = 60  # Auto-delete messages after 60 seconds
 MAX_BUTTON_TEXT_LENGTH = 64  # Telegram's max button text length
-STORAGE_CHANNEL = -1001234567890  # Use numeric ID for private channels
+STORAGE_CHANNEL = -1002094808699  # Use numeric ID for private channels
 
 def encode_file_id(message_id):
     """Encodes message ID to generate a unique file retrieval link."""
