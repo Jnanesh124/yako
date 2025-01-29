@@ -55,34 +55,51 @@ async def search(bot, message):
     if message.text.startswith("/"):
         return
 
-    query = message.text
+    query = message.text.lower()
     head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
     buttons = []
 
     try:
-        for channel in channels:
-            try:
-                async for msg in User.search_messages(chat_id=channel, query=query):
-                    name = (msg.text or msg.caption).split("\n")[0]
+        # Search in the storage channel first
+        async for msg in User.search_messages(chat_id=STORAGE_CHANNEL, query=query):
+            if msg.document:  # Check if the message contains a file
+                file_name = msg.document.file_name.lower()
+                valid_formats = ['.mkv', '.mp4', '.avi', 'MKV', .mov', '.flv']
 
-                    if token_match(query, name):
-                        if any(name in btn[0].text for btn in buttons):
-                            continue
+                # Check if file format matches the allowed formats
+                if any(file_name.endswith(ext) for ext in valid_formats):
+                    file_id = msg.document.file_id
+                    stored_file_link = f"https://t.me/{bot.username}?start={msg.message_id}"
 
-                        formatted_title = format_title_for_button(name)
-                        buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=msg.link)])
+                    # Add button with direct stored file link
+                    buttons.append([InlineKeyboardButton(f"📥 {file_name}", url=stored_file_link)])
 
-            except (ChannelPrivate, PeerIdInvalid):
-                continue
-            except Exception as e:
-                print(f"Error accessing channel {channel}: {e}")
-                continue
+        # If no stored file is found, check in external channels
+        if not buttons:
+            for channel in channels:
+                try:
+                    async for msg in User.search_messages(chat_id=channel, query=query):
+                        name = (msg.text or msg.caption).split("\n")[0]
 
+                        if token_match(query, name):
+                            if any(name in btn[0].text for btn in buttons):
+                                continue
+
+                            formatted_title = format_title_for_button(name)
+                            buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=msg.link)])
+
+                except (ChannelPrivate, PeerIdInvalid):
+                    continue
+                except Exception as e:
+                    print(f"Error accessing channel {channel}: {e}")
+                    continue
+
+        # If still no results, show IMDb search
         if not buttons:
             movies = await search_imdb(query)
             buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
             msg = await message.reply_text(
-                text="<blockquote>😔 Only Type Movie Name 😔</blockquote>",
+                text="<blockquote>😔 No direct file found, but here are some suggestions:</blockquote>",
                 reply_markup=InlineKeyboardMarkup(buttons)
             )
         else:
@@ -180,7 +197,7 @@ async def store_file(bot, message):
         file = message.document
         if file:
             # Use channel ID for the storage channel
-            storage_channel = -1001234567890  # Channel ID
+            storage_channel = -1002051432955  # Channel ID
             file_link = await bot.get_file(file.file_id)
 
             # Forward the file to the storage channel
