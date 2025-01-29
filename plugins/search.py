@@ -69,7 +69,7 @@ async def search(bot, message):
                 # Check if file format matches the allowed formats
                 if any(file_name.endswith(ext) for ext in valid_formats):
                     file_id = msg.document.file_id
-                    stored_file_link = f"https://t.me/{bot.username}?start={msg.message_id}"
+                    stored_file_link = f"https://t.me/Rockers_Postsearch_Bot?start={msg.message_id}"
 
                     # Add button with direct stored file link
                     buttons.append([InlineKeyboardButton(f"📥 {file_name}", url=stored_file_link)])
@@ -208,7 +208,7 @@ async def store_file(bot, message):
             )
 
             # Send the generated storage link back to the user
-            storage_link = f"https://t.me/{bot.username}?start={stored_message.message_id}"
+            storage_link = f"https://t.me/Rockers_Postsearch_Bot?start={stored_message.message_id}"
             await message.reply(f"✅ File has been stored! You can access it here: {storage_link}")
 
     except Exception as e:
