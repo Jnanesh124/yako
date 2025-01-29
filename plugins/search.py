@@ -10,38 +10,22 @@ import difflib  # For fuzzy matching
 
 AUTO_DELETE_DURATION = 60  # Auto-delete messages after 60 seconds
 MAX_BUTTON_TEXT_LENGTH = 64  # Telegram's max button text length
+STORAGE_CHANNEL = "@JN2FLIX_KANNADA"  # Your storage channel
 
 def token_match(query, movie_name):
     query_tokens = query.lower().split()
     movie_tokens = movie_name.lower().split()
 
-    matched_tokens = 0
-    for token in query_tokens:
-        for movie_token in movie_tokens:
-            similarity = difflib.SequenceMatcher(None, token, movie_token).ratio()
-            if similarity > 0.7:
-                matched_tokens += 1
-                break
-
+    matched_tokens = sum(
+        any(difflib.SequenceMatcher(None, token, movie_token).ratio() > 0.7 for movie_token in movie_tokens)
+        for token in query_tokens
+    )
+    
     return matched_tokens >= len(query_tokens) // 2
 
 def format_title_for_button(title):
-    """Format long movie titles so they fit properly in a single button."""
-    if len(title) <= MAX_BUTTON_TEXT_LENGTH:
-        return title  # No need to modify if it's short enough
-    
-    words = title.split()  # Split title into words
-    new_title = ""
-    current_length = 0
-    
-    for word in words:
-        if current_length + len(word) + 1 > MAX_BUTTON_TEXT_LENGTH:  
-            new_title += "\n"  # Add a line break before exceeding 64 chars
-            current_length = 0  
-        new_title += word + " "  
-        current_length += len(word) + 1  
-    
-    return new_title.strip()  # Remove extra spaces
+    """Ensure the movie title fits within the Telegram button character limit."""
+    return title if len(title) <= MAX_BUTTON_TEXT_LENGTH else title[:MAX_BUTTON_TEXT_LENGTH - 3] + "..."
 
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
@@ -49,9 +33,7 @@ async def search(bot, message):
     if not f_sub:
         return
     channels = (await get_group(message.chat.id))["channels"]
-    if not channels:
-        return
-    if message.text.startswith("/"):
+    if not channels or message.text.startswith("/"):
         return
 
     query = message.text
@@ -63,14 +45,8 @@ async def search(bot, message):
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
-
-                    if token_match(query, name):
-                        if any(name in btn[0].text for btn in buttons):
-                            continue
-
-                        formatted_title = format_title_for_button(name)
-                        buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=msg.link)])
-
+                    if token_match(query, name) and not any(name in btn[0].text for btn in buttons):
+                        buttons.append([InlineKeyboardButton(f"🍿 {format_title_for_button(name)}", url=msg.link)])
             except (ChannelPrivate, PeerIdInvalid):
                 continue
             except Exception as e:
@@ -119,14 +95,8 @@ async def recheck(bot, update):
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
-
-                    if token_match(query, name):
-                        if any(name in btn[0].text for btn in buttons):
-                            continue
-
-                        formatted_title = format_title_for_button(name)
-                        buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=msg.link)])
-
+                    if token_match(query, name) and not any(name in btn[0].text for btn in buttons):
+                        buttons.append([InlineKeyboardButton(f"🍿 {format_title_for_button(name)}", url=msg.link)])
             except (ChannelPrivate, PeerIdInvalid):
                 continue
             except Exception as e:
@@ -171,26 +141,33 @@ async def request(bot, update):
     await update.answer("✅ Request Sent To Admin", show_alert=True)
     await update.message.delete()
 
-# New feature to store and forward file links
 @Client.on_message(filters.document & filters.group)
 async def store_file(bot, message):
     try:
-        # Check if message is a file and store it
         file = message.document
-        if file:
-            storage_channel = "@JN2FLIX_KANNADA"  # Define your storage channel
-            file_link = await bot.get_file(file.file_id)
+        if not file:
+            return
+        
+        file_name = file.file_name
+        file_caption = f"📥 File stored: {file_name}"
 
-            # Forward the file to the storage channel
-            stored_message = await bot.send_document(
-                storage_channel,
-                file_link.file_url,
-                caption=f"📥 File stored: {file.file_name}",
-            )
+        # Check if file already exists
+        async for msg in bot.search_messages(STORAGE_CHANNEL, file_name):
+            if msg.document:
+                storage_link = f"https://t.me/{STORAGE_CHANNEL}/{msg.message_id}"
+                await message.reply(f"✅ File already exists! You can access it here: {storage_link}")
+                return  # Stop execution
 
-            # Send the generated storage link back to the user
-            storage_link = f"https://t.me/{bot.username}?start={stored_message.message_id}"
-            await message.reply(f"✅ File has been stored! You can access it here: {storage_link}")
+        # If file is not found, store it
+        stored_message = await bot.copy_message(
+            chat_id=STORAGE_CHANNEL,
+            from_chat_id=message.chat.id,
+            message_id=message.message_id
+        )
+
+        # Generate and send the storage link
+        storage_link = f"https://t.me/{STORAGE_CHANNEL}/{stored_message.message_id}"
+        await message.reply(f"✅ File has been stored! You can access it here: {storage_link}")
 
     except Exception as e:
         print(f"Error storing file: {e}")
