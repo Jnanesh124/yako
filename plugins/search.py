@@ -1,4 +1,5 @@
 import asyncio
+import base64
 from info import *
 from utils import *
 from time import time
@@ -10,30 +11,35 @@ import difflib  # For fuzzy matching
 
 AUTO_DELETE_DURATION = 60  # Auto-delete messages after 60 seconds
 MAX_BUTTON_TEXT_LENGTH = 64  # Telegram's max button text length
-STORAGE_CHANNEL = "@JN2FLIX_KANNADA"  # Your storage channel
+STORAGE_CHANNEL = -1001234567890  # Use numeric ID for private channels
 
-def token_match(query, movie_name):
-    query_tokens = query.lower().split()
-    movie_tokens = movie_name.lower().split()
+def encode_file_id(message_id):
+    """Encodes message ID to generate a unique file retrieval link."""
+    return base64.urlsafe_b64encode(f"get-{message_id}".encode()).decode()
 
-    matched_tokens = sum(
-        any(difflib.SequenceMatcher(None, token, movie_token).ratio() > 0.7 for movie_token in movie_tokens)
-        for token in query_tokens
-    )
-    
-    return matched_tokens >= len(query_tokens) // 2
+def decode_file_id(encoded_id):
+    """Decodes the start parameter back to a message ID."""
+    try:
+        decoded = base64.urlsafe_b64decode(encoded_id.encode()).decode()
+        if decoded.startswith("get-"):
+            return int(decoded.split("-")[-1])
+    except:
+        return None
 
 def format_title_for_button(title):
-    """Ensure the movie title fits within the Telegram button character limit."""
+    """Format long movie titles to fit within Telegram's button character limit."""
     return title if len(title) <= MAX_BUTTON_TEXT_LENGTH else title[:MAX_BUTTON_TEXT_LENGTH - 3] + "..."
 
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
+    """Handles movie searches and generates file links if available."""
     f_sub = await force_sub(bot, message)
     if not f_sub:
         return
     channels = (await get_group(message.chat.id))["channels"]
-    if not channels or message.text.startswith("/"):
+    if not channels:
+        return
+    if message.text.startswith("/"):
         return
 
     query = message.text
@@ -45,8 +51,18 @@ async def search(bot, message):
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
-                    if token_match(query, name) and not any(name in btn[0].text for btn in buttons):
-                        buttons.append([InlineKeyboardButton(f"🍿 {format_title_for_button(name)}", url=msg.link)])
+
+                    if token_match(query, name):
+                        # Check if file exists in storage channel
+                        async for stored_msg in bot.search_messages(STORAGE_CHANNEL, query):
+                            if stored_msg.document:
+                                encoded_id = encode_file_id(stored_msg.message_id)
+                                storage_link = f"https://t.me/{bot.username}?start={encoded_id}"
+                                buttons.append([InlineKeyboardButton(f"🍿 {format_title_for_button(name)}", url=storage_link)])
+                                break  # Stop checking once a match is found
+                        else:
+                            buttons.append([InlineKeyboardButton(f"🍿 {format_title_for_button(name)}", url=msg.link)])
+
             except (ChannelPrivate, PeerIdInvalid):
                 continue
             except Exception as e:
@@ -57,7 +73,7 @@ async def search(bot, message):
             movies = await search_imdb(query)
             buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
             msg = await message.reply_text(
-                text="<blockquote>😔 Only Type Movie Name 😔</blockquote>",
+                text="<blockquote>😔 No results found. Try a different spelling. 😔</blockquote>",
                 reply_markup=InlineKeyboardMarkup(buttons)
             )
         else:
@@ -74,6 +90,7 @@ async def search(bot, message):
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
+    """Handles rechecking movie names when the user clicks a recheck button."""
     clicked = update.from_user.id
     try:
         typed = update.message.reply_to_message.from_user.id
@@ -95,8 +112,14 @@ async def recheck(bot, update):
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
-                    if token_match(query, name) and not any(name in btn[0].text for btn in buttons):
-                        buttons.append([InlineKeyboardButton(f"🍿 {format_title_for_button(name)}", url=msg.link)])
+
+                    if token_match(query, name):
+                        if any(name in btn[0].text for btn in buttons):
+                            continue
+
+                        formatted_title = format_title_for_button(name)
+                        buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=msg.link)])
+
             except (ChannelPrivate, PeerIdInvalid):
                 continue
             except Exception as e:
@@ -118,6 +141,7 @@ async def recheck(bot, update):
 
 @Client.on_callback_query(filters.regex(r"^request"))
 async def request(bot, update):
+    """Handles user requests to send movie details to admin."""
     clicked = update.from_user.id
     try:
         typed = update.message.reply_to_message.from_user.id
@@ -141,33 +165,26 @@ async def request(bot, update):
     await update.answer("✅ Request Sent To Admin", show_alert=True)
     await update.message.delete()
 
+# New feature to store and forward file links
 @Client.on_message(filters.document & filters.group)
 async def store_file(bot, message):
     try:
+        # Check if message is a file and store it
         file = message.document
-        if not file:
-            return
-        
-        file_name = file.file_name
-        file_caption = f"📥 File stored: {file_name}"
+        if file:
+            storage_channel = "@JN2FLIX_KANNADA"  # Define your storage channel
+            file_link = await bot.get_file(file.file_id)
 
-        # Check if file already exists
-        async for msg in bot.search_messages(STORAGE_CHANNEL, file_name):
-            if msg.document:
-                storage_link = f"https://t.me/{STORAGE_CHANNEL}/{msg.message_id}"
-                await message.reply(f"✅ File already exists! You can access it here: {storage_link}")
-                return  # Stop execution
+            # Forward the file to the storage channel
+            stored_message = await bot.send_document(
+                storage_channel,
+                file_link.file_url,
+                caption=f"📥 File stored: {file.file_name}",
+            )
 
-        # If file is not found, store it
-        stored_message = await bot.copy_message(
-            chat_id=STORAGE_CHANNEL,
-            from_chat_id=message.chat.id,
-            message_id=message.message_id
-        )
-
-        # Generate and send the storage link
-        storage_link = f"https://t.me/{STORAGE_CHANNEL}/{stored_message.message_id}"
-        await message.reply(f"✅ File has been stored! You can access it here: {storage_link}")
+            # Send the generated storage link back to the user
+            storage_link = f"https://t.me/{bot.username}?start={stored_message.message_id}"
+            await message.reply(f"✅ File has been stored! You can access it here: {storage_link}")
 
     except Exception as e:
         print(f"Error storing file: {e}")
