@@ -8,29 +8,40 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import ChannelPrivate, PeerIdInvalid
 import difflib  # For fuzzy matching
 
-# Auto-delete duration in seconds
-AUTO_DELETE_DURATION = 60  # Adjust this value as needed
+AUTO_DELETE_DURATION = 60  # Auto-delete messages after 60 seconds
+MAX_BUTTON_TEXT_LENGTH = 64  # Telegram's max button text length
 
 def token_match(query, movie_name):
-    """
-    Token-based fuzzy matching function. Breaks both the query and movie title into tokens and compares them using fuzzy matching.
-    """
-    # Tokenize the query and movie title by splitting by spaces
     query_tokens = query.lower().split()
     movie_tokens = movie_name.lower().split()
 
-    # Compare tokens using difflib's SequenceMatcher for fuzzy matching
     matched_tokens = 0
     for token in query_tokens:
-        # Check for similarity with each token in the movie name
         for movie_token in movie_tokens:
             similarity = difflib.SequenceMatcher(None, token, movie_token).ratio()
-            if similarity > 0.7:  # You can adjust this threshold for more or less strict matching
+            if similarity > 0.7:
                 matched_tokens += 1
-                break  # Stop after finding one matching token
+                break
 
-    # If a sufficient number of tokens match, return True
-    return matched_tokens >= len(query_tokens) // 2  # Match at least half of the tokens
+    return matched_tokens >= len(query_tokens) // 2
+
+def format_title_for_button(title):
+    """Format long movie titles so they fit properly in a single button."""
+    if len(title) <= MAX_BUTTON_TEXT_LENGTH:
+        return title  # No need to modify if it's short enough
+    
+    words = title.split()  # Split title into words
+    new_title = ""
+    current_length = 0
+    
+    for word in words:
+        if current_length + len(word) + 1 > MAX_BUTTON_TEXT_LENGTH:  
+            new_title += "\n"  # Add a line break before exceeding 64 chars
+            current_length = 0  
+        new_title += word + " "  
+        current_length += len(word) + 1  
+    
+    return new_title.strip()  # Remove extra spaces
 
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
@@ -45,28 +56,28 @@ async def search(bot, message):
 
     query = message.text
     head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
-    results = ""
+    buttons = []
 
     try:
         for channel in channels:
-            # Check if the bot can access the channel, handle potential errors
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
 
-                    # Use token-based fuzzy matching here
                     if token_match(query, name):
-                        if name in results:
+                        if any(name in btn[0].text for btn in buttons):
                             continue
-                        results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
-            except (ChannelPrivate, PeerIdInvalid) as e:
-                print(f"Channel {channel} is inaccessible or banned, skipping...")
-                continue  # Skip this channel if it’s private or invalid
+
+                        formatted_title = format_title_for_button(name)
+                        buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=msg.link)])
+
+            except (ChannelPrivate, PeerIdInvalid):
+                continue
             except Exception as e:
                 print(f"Error accessing channel {channel}: {e}")
-                continue  # Skip this channel on any other error
+                continue
 
-        if not results:
+        if not buttons:
             movies = await search_imdb(query)
             buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
             msg = await message.reply_text(
@@ -74,15 +85,16 @@ async def search(bot, message):
                 reply_markup=InlineKeyboardMarkup(buttons)
             )
         else:
-            msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
+            msg = await message.reply_text(
+                text=head,
+                reply_markup=InlineKeyboardMarkup(buttons)
+            )
 
-        # Auto-delete the message after the specified duration
         await asyncio.sleep(AUTO_DELETE_DURATION)
         await msg.delete()
 
     except Exception as e:
-        print(f"Error in search: {e}")  # Log the error for debugging
-
+        print(f"Error in search: {e}")
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
@@ -100,41 +112,39 @@ async def recheck(bot, update):
     query = await search_imdb(id)
     channels = (await get_group(update.message.chat.id))["channels"]
     head = "<b>👇 I Have Searched Movie With Wrong Spelling But Take care next time 👇</b>\n\n"
-    results = ""
+    buttons = []
 
     try:
         for channel in channels:
-            # Check if the bot can access the channel, handle potential errors
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
 
-                    # Use token-based fuzzy matching here
                     if token_match(query, name):
-                        if name in results:
+                        if any(name in btn[0].text for btn in buttons):
                             continue
-                        results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
-            except (ChannelPrivate, PeerIdInvalid) as e:
-                print(f"Channel {channel} is inaccessible or banned, skipping...")
-                continue  # Skip this channel if it’s private or invalid
+
+                        formatted_title = format_title_for_button(name)
+                        buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=msg.link)])
+
+            except (ChannelPrivate, PeerIdInvalid):
+                continue
             except Exception as e:
                 print(f"Error accessing channel {channel}: {e}")
-                continue  # Skip this channel on any other error
+                continue
 
-        if not results:
+        if not buttons:
             return await update.message.edit(
                 "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
             )
-        await update.message.edit(text=head + results, disable_web_page_preview=True)
+        await update.message.edit(text=head, reply_markup=InlineKeyboardMarkup(buttons))
 
-        # Auto-delete the message after the specified duration
         await asyncio.sleep(AUTO_DELETE_DURATION)
         await update.message.delete()
 
     except Exception as e:
         await update.message.edit(f"❌ Error: {e}")
-
 
 @Client.on_callback_query(filters.regex(r"^request"))
 async def request(bot, update):
@@ -155,9 +165,33 @@ async def request(bot, update):
     
     msg = await bot.send_message(chat_id=admin, text=text, disable_web_page_preview=True)
 
-    # Auto-delete the message after the specified duration
     await asyncio.sleep(AUTO_DELETE_DURATION)
     await msg.delete()
 
     await update.answer("✅ Request Sent To Admin", show_alert=True)
     await update.message.delete()
+
+# New feature to store and forward file links
+@Client.on_message(filters.document & filters.group)
+async def store_file(bot, message):
+    try:
+        # Check if message is a file and store it
+        file = message.document
+        if file:
+            storage_channel = "@JN2FLIX_KANNADA"  # Define your storage channel
+            file_link = await bot.get_file(file.file_id)
+
+            # Forward the file to the storage channel
+            stored_message = await bot.send_document(
+                storage_channel,
+                file_link.file_url,
+                caption=f"📥 File stored: {file.file_name}",
+            )
+
+            # Send the generated storage link back to the user
+            storage_link = f"https://t.me/{bot.username}?start={stored_message.message_id}"
+            await message.reply(f"✅ File has been stored! You can access it here: {storage_link}")
+
+    except Exception as e:
+        print(f"Error storing file: {e}")
+        await message.reply("❌ Failed to store file.")
