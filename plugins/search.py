@@ -5,8 +5,6 @@ from pyrogram.errors import ChannelPrivate, PeerIdInvalid, FloodWait
 import difflib  # For fuzzy matching
 
 STORAGE_CHANNEL = -1002051432955  # Define your storage channel using channel ID
-
-# Define the max length for buttons
 MAX_BUTTON_TEXT_LENGTH = 64  # Telegram's max button text length
 
 def token_match(query, movie_name):
@@ -57,7 +55,7 @@ async def search(bot, message):
         # Search in connected channels
         for channel in channels:
             try:
-                async for msg in User.search_messages(chat_id=channel, query=query):
+                async for msg in bot.search_messages(chat_id=channel, query=query):
                     # Ensure the message is valid and has the message_id attribute
                     if hasattr(msg, 'message_id') and msg.message_id:
                         name = (msg.text or msg.caption).split("\n")[0]
@@ -122,10 +120,10 @@ async def store_file(bot, message):
 # Define helper functions for searching, forwarding, and creating buttons
 async def get_group(chat_id):
     """Retrieve connected channels and group settings."""
-    # Your logic here to fetch group data
-    pass
+    # Your logic here to fetch group data, such as connected channels
+    return {"channels": [-1001775543467, -1001654685875, -1001359763936]}  # Example channel IDs
 
 async def search_imdb(query):
     """Search for movies using IMDb API (you need to implement or use an API)."""
     # Your logic here to search IMDb or implement the search
-    pass
+    return [{"id": "tt1234567", "title": "KGF 1"}, {"id": "tt7654321", "title": "KGF 2"}]  # Example IMDb results
