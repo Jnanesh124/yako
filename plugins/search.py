@@ -30,7 +30,7 @@ def token_match(query, movie_name):
                 break  # Stop after finding one matching token
 
     # If a sufficient number of tokens match, return True
-    return matched_tokens >= len(query_tokens) // 2  # Match at least half of the tokens
+    return matched_tokens >= len(query_tokens) // 1  # Match at least half of the tokens
 
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
@@ -52,7 +52,7 @@ async def search(bot, message):
     results = ""
 
     # Display "Searching..." message
-    searching_msg = await message.reply_text(f"Searching for '{query}'...💥 Please wait", disable_web_page_preview=True)
+    searching_msg = await message.reply_text(f"<strong>Searching : {query}</strong>", disable_web_page_preview=True)
 
     try:
         for channel in channels:
