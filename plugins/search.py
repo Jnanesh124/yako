@@ -64,7 +64,7 @@ async def search(bot, message):
         async for msg in User.search_messages(chat_id=STORAGE_CHANNEL, query=query):
             if msg.document:  # Check if the message contains a file
                 file_name = msg.document.file_name.lower()
-                valid_formats = ['.mkv', '.mp4', '.avi', 'MKV', .mov', '.flv']
+                valid_formats = ['.mkv', '.mp4', '.avi', '.MKV', '.mov', '.flv']
 
                 # Check if file format matches the allowed formats
                 if any(file_name.endswith(ext) for ext in valid_formats):
