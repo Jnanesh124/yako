@@ -207,10 +207,13 @@ async def store_file(bot, message):
                 caption=f"📥 File stored: {file.file_name}",
             )
 
-            # Send the generated storage link back to the user
+            # Get the message_id of the stored message
             storage_link = f"https://t.me/Rockers_Postsearch_Bot?start={stored_message.message_id}"
+            
+            # Send the generated storage link back to the user
             await message.reply(f"✅ File has been stored! You can access it here: {storage_link}")
 
     except Exception as e:
         print(f"Error storing file: {e}")
         await message.reply("❌ Failed to store file.")
+
