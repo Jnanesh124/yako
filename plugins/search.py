@@ -1,5 +1,4 @@
 import asyncio
-import base64
 from info import *
 from utils import *
 from time import time
@@ -11,28 +10,42 @@ import difflib  # For fuzzy matching
 
 AUTO_DELETE_DURATION = 60  # Auto-delete messages after 60 seconds
 MAX_BUTTON_TEXT_LENGTH = 64  # Telegram's max button text length
-STORAGE_CHANNEL = -1002094808699  # Use numeric ID for private channels
+STORAGE_CHANNEL = -1002051432955  # Define your storage channel using channel ID
 
-def encode_file_id(message_id):
-    """Encodes message ID to generate a unique file retrieval link."""
-    return base64.urlsafe_b64encode(f"get-{message_id}".encode()).decode()
+def token_match(query, movie_name):
+    query_tokens = query.lower().split()
+    movie_tokens = movie_name.lower().split()
 
-def decode_file_id(encoded_id):
-    """Decodes the start parameter back to a message ID."""
-    try:
-        decoded = base64.urlsafe_b64decode(encoded_id.encode()).decode()
-        if decoded.startswith("get-"):
-            return int(decoded.split("-")[-1])
-    except:
-        return None
+    matched_tokens = 0
+    for token in query_tokens:
+        for movie_token in movie_tokens:
+            similarity = difflib.SequenceMatcher(None, token, movie_token).ratio()
+            if similarity > 0.7:
+                matched_tokens += 1
+                break
+
+    return matched_tokens >= len(query_tokens) // 2
 
 def format_title_for_button(title):
-    """Format long movie titles to fit within Telegram's button character limit."""
-    return title if len(title) <= MAX_BUTTON_TEXT_LENGTH else title[:MAX_BUTTON_TEXT_LENGTH - 3] + "..."
+    """Format long movie titles so they fit properly in a single button."""
+    if len(title) <= MAX_BUTTON_TEXT_LENGTH:
+        return title  # No need to modify if it's short enough
+    
+    words = title.split()  # Split title into words
+    new_title = ""
+    current_length = 0
+    
+    for word in words:
+        if current_length + len(word) + 1 > MAX_BUTTON_TEXT_LENGTH:  
+            new_title += "\n"  # Add a line break before exceeding 64 chars
+            current_length = 0  
+        new_title += word + " "  
+        current_length += len(word) + 1  
+    
+    return new_title.strip()  # Remove extra spaces
 
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
-    """Handles movie searches and generates file links if available."""
     f_sub = await force_sub(bot, message)
     if not f_sub:
         return
@@ -53,15 +66,11 @@ async def search(bot, message):
                     name = (msg.text or msg.caption).split("\n")[0]
 
                     if token_match(query, name):
-                        # Check if file exists in storage channel
-                        async for stored_msg in bot.search_messages(STORAGE_CHANNEL, query):
-                            if stored_msg.document:
-                                encoded_id = encode_file_id(stored_msg.message_id)
-                                storage_link = f"https://t.me/{bot.username}?start={encoded_id}"
-                                buttons.append([InlineKeyboardButton(f"🍿 {format_title_for_button(name)}", url=storage_link)])
-                                break  # Stop checking once a match is found
-                        else:
-                            buttons.append([InlineKeyboardButton(f"🍿 {format_title_for_button(name)}", url=msg.link)])
+                        if any(name in btn[0].text for btn in buttons):
+                            continue
+
+                        formatted_title = format_title_for_button(name)
+                        buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=msg.link)])
 
             except (ChannelPrivate, PeerIdInvalid):
                 continue
@@ -73,7 +82,7 @@ async def search(bot, message):
             movies = await search_imdb(query)
             buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
             msg = await message.reply_text(
-                text="<blockquote>😔 No results found. Try a different spelling. 😔</blockquote>",
+                text="<blockquote>😔 Only Type Movie Name 😔</blockquote>",
                 reply_markup=InlineKeyboardMarkup(buttons)
             )
         else:
@@ -90,7 +99,6 @@ async def search(bot, message):
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
-    """Handles rechecking movie names when the user clicks a recheck button."""
     clicked = update.from_user.id
     try:
         typed = update.message.reply_to_message.from_user.id
@@ -141,7 +149,6 @@ async def recheck(bot, update):
 
 @Client.on_callback_query(filters.regex(r"^request"))
 async def request(bot, update):
-    """Handles user requests to send movie details to admin."""
     clicked = update.from_user.id
     try:
         typed = update.message.reply_to_message.from_user.id
@@ -172,12 +179,13 @@ async def store_file(bot, message):
         # Check if message is a file and store it
         file = message.document
         if file:
-            storage_channel = "@JN2FLIX_KANNADA"  # Define your storage channel
+            # Use channel ID for the storage channel
+            storage_channel = -1001234567890  # Channel ID
             file_link = await bot.get_file(file.file_id)
 
             # Forward the file to the storage channel
             stored_message = await bot.send_document(
-                storage_channel,
+                storage_channel,  # Numeric channel ID
                 file_link.file_url,
                 caption=f"📥 File stored: {file.file_name}",
             )
