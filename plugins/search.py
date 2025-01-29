@@ -60,41 +60,33 @@ async def search(bot, message):
     buttons = []
 
     try:
-        # Search in the storage channel first
-        async for msg in User.search_messages(chat_id=STORAGE_CHANNEL, query=query):
-            if msg.document:  # Check if the message contains a file
-                file_name = msg.document.file_name.lower()
-                valid_formats = ['.mkv', '.mp4', '.avi', '.MKV', '.mov', '.flv']
+        # Search in the connected channels first
+        for channel in channels:
+            try:
+                async for msg in User.search_messages(chat_id=channel, query=query):
+                    name = (msg.text or msg.caption).split("\n")[0]
 
-                # Check if file format matches the allowed formats
-                if any(file_name.endswith(ext) for ext in valid_formats):
-                    file_id = msg.document.file_id
-                    stored_file_link = f"https://t.me/Rockers_Postsearch_Bot?start={msg.message_id}"
+                    if token_match(query, name):
+                        if any(name in btn[0].text for btn in buttons):
+                            continue
 
-                    # Add button with direct stored file link
-                    buttons.append([InlineKeyboardButton(f"📥 {file_name}", url=stored_file_link)])
+                        formatted_title = format_title_for_button(name)
+                        # Store the found post
+                        stored_message = await bot.forward_messages(STORAGE_CHANNEL, channel, msg.message_id)
+                        
+                        # Generate the special access link for the stored post
+                        stored_link = f"https://t.me/Rockers_Postsearch_Bot?start={stored_message.message_id}"
 
-        # If no stored file is found, check in external channels
-        if not buttons:
-            for channel in channels:
-                try:
-                    async for msg in User.search_messages(chat_id=channel, query=query):
-                        name = (msg.text or msg.caption).split("\n")[0]
+                        # Add the button with the special access link
+                        buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=stored_link)])
 
-                        if token_match(query, name):
-                            if any(name in btn[0].text for btn in buttons):
-                                continue
+            except (ChannelPrivate, PeerIdInvalid):
+                continue
+            except Exception as e:
+                print(f"Error accessing channel {channel}: {e}")
+                continue
 
-                            formatted_title = format_title_for_button(name)
-                            buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=msg.link)])
-
-                except (ChannelPrivate, PeerIdInvalid):
-                    continue
-                except Exception as e:
-                    print(f"Error accessing channel {channel}: {e}")
-                    continue
-
-        # If still no results, show IMDb search
+        # If no buttons found, show IMDb search
         if not buttons:
             movies = await search_imdb(query)
             buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
@@ -154,8 +146,8 @@ async def recheck(bot, update):
         if not buttons:
             return await update.message.edit(
                 "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
-            )
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]]))
+        
         await update.message.edit(text=head, reply_markup=InlineKeyboardMarkup(buttons))
 
         await asyncio.sleep(AUTO_DELETE_DURATION)
@@ -189,31 +181,35 @@ async def request(bot, update):
     await update.answer("✅ Request Sent To Admin", show_alert=True)
     await update.message.delete()
 
-# New feature to store and forward file links
-@Client.on_message(filters.document & filters.group)
-async def store_file(bot, message):
+# New feature to store and forward found posts with special access links
+@Client.on_message(filters.text & filters.group & ~filters.command(["verify", "connect", "id"]))
+async def store_found_post(bot, message):
     try:
-        # Check if message is a file and store it
-        file = message.document
-        if file:
-            # Use channel ID for the storage channel
-            storage_channel = -1002051432955  # Channel ID
-            file_link = await bot.get_file(file.file_id)
+        # Search for a movie in the connected channels
+        query = message.text.lower()
+        channels = (await get_group(message.chat.id))["channels"]
+        buttons = []
 
-            # Forward the file to the storage channel
-            stored_message = await bot.send_document(
-                storage_channel,  # Numeric channel ID
-                file_link.file_url,
-                caption=f"📥 File stored: {file.file_name}",
+        for channel in channels:
+            async for msg in User.search_messages(chat_id=channel, query=query):
+                name = (msg.text or msg.caption).split("\n")[0]
+                if token_match(query, name):
+                    # Forward the found post to storage channel
+                    stored_message = await bot.forward_messages(STORAGE_CHANNEL, channel, msg.message_id)
+
+                    # Generate special access link for the stored post
+                    stored_link = f"https://t.me/Rockers_Postsearch_Bot?start={stored_message.message_id}"
+
+                    # Add button for the user to access the stored post
+                    formatted_title = format_title_for_button(name)
+                    buttons.append([InlineKeyboardButton(f"🍿 {formatted_title}", url=stored_link)])
+
+        if buttons:
+            await message.reply(
+                "I found this movie for you! 🎬 Click the button below to access it.",
+                reply_markup=InlineKeyboardMarkup(buttons)
             )
 
-            # Get the message_id of the stored message
-            storage_link = f"https://t.me/Rockers_Postsearch_Bot?start={stored_message.message_id}"
-            
-            # Send the generated storage link back to the user
-            await message.reply(f"✅ File has been stored! You can access it here: {storage_link}")
-
     except Exception as e:
-        print(f"Error storing file: {e}")
-        await message.reply("❌ Failed to store file.")
-
+        print(f"Error storing and forwarding found post: {e}")
+        await message.reply("❌ Failed to store the found post.")
