@@ -51,30 +51,30 @@ async def search(bot, message):
     head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
     results = ""
 
-    # Display "Searching..." message with query information
-    msg = await message.reply_text(f"Searching for '{query}'...💥 Please wait", disable_web_page_preview=True)
+    # Display "Searching..." message
+    searching_msg = await message.reply_text(f"Searching for '{query}'...💥 Please wait", disable_web_page_preview=True)
 
     try:
         for channel in channels:
-            # Check if the bot can access the channel, handle potential errors
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
 
-                    # Use token-based fuzzy matching here
                     if token_match(query, name):
                         if name in results:
                             continue
                         results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
-            except (ChannelPrivate, PeerIdInvalid) as e:
-                print(f"Channel {channel} is inaccessible or banned, skipping...")
-                continue  # Skip this channel if it’s private or invalid
+            except (ChannelPrivate, PeerIdInvalid):
+                continue  
             except Exception as e:
                 print(f"Error accessing channel {channel}: {e}")
-                continue  # Skip this channel on any other error
+                continue  
 
-        # Remove "Searching..." message
-        await msg.delete()
+        # Ensure searching message is deleted before continuing
+        try:
+            await searching_msg.delete()
+        except Exception:
+            pass  
 
         if not results:
             movies = await search_imdb(query)
@@ -86,15 +86,18 @@ async def search(bot, message):
         else:
             msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
-        # Auto-delete the message after the specified duration
+        # Auto-delete message after specified duration
         await asyncio.sleep(AUTO_DELETE_DURATION)
         await msg.delete()
 
     except Exception as e:
-        print(f"Error in search: {e}")  # Log the error for debugging
-        await msg.edit(f"❌ Error occurred: {e}")
-        await asyncio.sleep(AUTO_DELETE_DURATION)
-        await msg.delete()
+        print(f"Error in search: {e}")
+        try:
+            await searching_msg.edit(f"❌ Error occurred: {e}")
+            await asyncio.sleep(AUTO_DELETE_DURATION)
+            await searching_msg.delete()
+        except Exception:
+            pass  
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
@@ -107,8 +110,8 @@ async def recheck(bot, update):
     if clicked != typed:
         return await update.answer("That's not for you! 👀", show_alert=True)
 
-    # Display "Searching..." message with query information
-    m = await update.message.edit(f"Searching for IMDb movie...💥 Please wait")
+    # Display "Searching..." message
+    searching_msg = await update.message.edit("Searching for IMDb movie...💥 Please wait")
 
     id = update.data.split("_")[-1]
     query = await search_imdb(id)
@@ -118,25 +121,25 @@ async def recheck(bot, update):
 
     try:
         for channel in channels:
-            # Check if the bot can access the channel, handle potential errors
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
 
-                    # Use token-based fuzzy matching here
                     if token_match(query, name):
                         if name in results:
                             continue
                         results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
-            except (ChannelPrivate, PeerIdInvalid) as e:
-                print(f"Channel {channel} is inaccessible or banned, skipping...")
-                continue  # Skip this channel if it’s private or invalid
+            except (ChannelPrivate, PeerIdInvalid):
+                continue  
             except Exception as e:
                 print(f"Error accessing channel {channel}: {e}")
-                continue  # Skip this channel on any other error
+                continue  
 
-        # Remove "Searching..." message
-        await m.delete()
+        # Ensure searching message is deleted before continuing
+        try:
+            await searching_msg.delete()
+        except Exception:
+            pass  
 
         if not results:
             return await update.message.edit(
@@ -144,13 +147,17 @@ async def recheck(bot, update):
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]]),
                 disable_web_page_preview=True
             )
+        
         await update.message.edit(text=head + results, disable_web_page_preview=True)
 
-        # Auto-delete the message after the specified duration
+        # Auto-delete message after specified duration
         await asyncio.sleep(AUTO_DELETE_DURATION)
         await update.message.delete()
 
     except Exception as e:
-        await update.message.edit(f"❌ Error: {e}")
-        await asyncio.sleep(AUTO_DELETE_DURATION)
-        await update.message.delete()
+        try:
+            await update.message.edit(f"❌ Error: {e}")
+            await asyncio.sleep(AUTO_DELETE_DURATION)
+            await update.message.delete()
+        except Exception:
+            pass  
