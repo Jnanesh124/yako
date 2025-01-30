@@ -1,4 +1,6 @@
 import asyncio
+import re
+import difflib
 from info import *
 from utils import *
 from time import time
@@ -6,31 +8,45 @@ from client import User
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import ChannelPrivate, PeerIdInvalid
-import difflib  # For fuzzy matching
 
 # Auto-delete duration in seconds
-AUTO_DELETE_DURATION = 60  # Adjust this value as needed
+AUTO_DELETE_DURATION = 60  # Adjust as needed
 
-def token_match(query, movie_name):
+# Stopwords, languages, and formats to remove
+STOPWORDS = {
+    "movie", "dubbed", "download", "full", "hd", "version", "watch", "online", 
+    "free", "latest", "best", "bluray", "web", "rip", "cam", "quality", "official",
+    "print", "leaked", "real", "fast", "stream", "ultra", "high", "low", "super"
+}
+LANGUAGES = {"hindi", "english", "tamil", "telugu", "kannada", "malayalam", "bengali", "urdu"}
+FORMATS = {"1080p", "720p", "480p", "360p", "hdrip", "dvdrip", "webrip", "hevc", "x264", "x265"}
+
+# Predefined movie list for fuzzy matching
+MOVIE_LIST = ["kgf", "jawan", "pushpa", "spider man", "pani", "animal", "leo", "avengers", "thor", "oppenheimer"]  # Add more
+
+def extract_movie_name(query):
     """
-    Token-based fuzzy matching function. Breaks both the query and movie title into tokens and compares them using fuzzy matching.
+    Extracts and corrects the movie name from a messy user query.
     """
-    # Tokenize the query and movie title by splitting by spaces
-    query_tokens = query.lower().split()
-    movie_tokens = movie_name.lower().split()
+    words = query.split()
 
-    # Compare tokens using difflib's SequenceMatcher for fuzzy matching
-    matched_tokens = 0
-    for token in query_tokens:
-        # Check for similarity with each token in the movie name
-        for movie_token in movie_tokens:
-            similarity = difflib.SequenceMatcher(None, token, movie_token).ratio()
-            if similarity > 0.7:  # You can adjust this threshold for more or less strict matching
-                matched_tokens += 1
-                break  # Stop after finding one matching token
+    # Remove numbers (years, resolutions)
+    cleaned_words = [word for word in words if not re.match(r'^\d{2,4}$', word)]
 
-    # If a sufficient number of tokens match, return True
-    return matched_tokens >= len(query_tokens) // 1  # Match at least half of the tokens
+    # Remove stopwords, languages, and formats
+    cleaned_words = [word for word in cleaned_words if word.lower() not in STOPWORDS]
+    cleaned_words = [word for word in cleaned_words if word.lower() not in LANGUAGES]
+    cleaned_words = [word for word in cleaned_words if word.lower() not in FORMATS]
+
+    if not cleaned_words:
+        return query  # If nothing is left, return original query
+
+    cleaned_query = " ".join(cleaned_words)
+
+    # Fuzzy match with known movies
+    best_match = difflib.get_close_matches(cleaned_query, MOVIE_LIST, n=1, cutoff=0.5)
+
+    return best_match[0] if best_match else cleaned_query
 
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
@@ -48,22 +64,28 @@ async def search(bot, message):
     # Remove unwanted characters like hashtags, @ mentions, and links
     query = ' '.join([word for word in query.split() if not word.startswith(('#', '@', 'http'))])
 
+    # Extract and correct movie name
+    extracted_movie_name = extract_movie_name(query)
+
+    # Show real-time fuzzy correction suggestion
+    correction_msg = await message.reply_text(f"🔍 Did you mean: <b>{extracted_movie_name}</b>?", disable_web_page_preview=True)
+    await asyncio.sleep(2)
+    await correction_msg.delete()
+
     head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
     results = ""
 
     # Display "Searching..." message
-    searching_msg = await message.reply_text(f"<strong>Searching : {query}</strong>", disable_web_page_preview=True)
+    searching_msg = await message.reply_text(f"<strong>Searching: {extracted_movie_name}</strong>", disable_web_page_preview=True)
 
     try:
         for channel in channels:
             try:
-                async for msg in User.search_messages(chat_id=channel, query=query):
-                    name = (msg.text or msg.caption).split("\n")[0]
+                async for msg in User.search_messages(chat_id=channel, query=extracted_movie_name):
+                    title = (msg.text or msg.caption).split("\n")[0]
 
-                    if token_match(query, name):
-                        if name in results:
-                            continue
-                        results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+                    if extracted_movie_name.lower() in title.lower():
+                        results += f"<strong>🍿 {title}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
             except (ChannelPrivate, PeerIdInvalid):
                 continue  
             except Exception as e:
@@ -77,7 +99,7 @@ async def search(bot, message):
             pass  
 
         if not results:
-            movies = await search_imdb(query)
+            movies = await search_imdb(extracted_movie_name)
             buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
             msg = await message.reply_text(
                 text="<blockquote>😔 No direct results found for your search, but I found some IMDb suggestions 😔</blockquote>",
@@ -96,68 +118,5 @@ async def search(bot, message):
             await searching_msg.edit(f"❌ Error occurred: {e}")
             await asyncio.sleep(AUTO_DELETE_DURATION)
             await searching_msg.delete()
-        except Exception:
-            pass  
-
-@Client.on_callback_query(filters.regex(r"^recheck"))
-async def recheck(bot, update):
-    clicked = update.from_user.id
-    try:
-        typed = update.message.reply_to_message.from_user.id
-    except:
-        return await update.message.delete()
-
-    if clicked != typed:
-        return await update.answer("That's not for you! 👀", show_alert=True)
-
-    # Display "Searching..." message
-    searching_msg = await update.message.edit("Searching for IMDb movie...💥 Please wait")
-
-    id = update.data.split("_")[-1]
-    query = await search_imdb(id)
-    channels = (await get_group(update.message.chat.id))["channels"]
-    head = "<b>👇 I Have Searched Movie With Wrong Spelling But Take care next time 👇</b>\n\n"
-    results = ""
-
-    try:
-        for channel in channels:
-            try:
-                async for msg in User.search_messages(chat_id=channel, query=query):
-                    name = (msg.text or msg.caption).split("\n")[0]
-
-                    if token_match(query, name):
-                        if name in results:
-                            continue
-                        results += f"<strong>🍿 {name}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
-            except (ChannelPrivate, PeerIdInvalid):
-                continue  
-            except Exception as e:
-                print(f"Error accessing channel {channel}: {e}")
-                continue  
-
-        # Ensure searching message is deleted before continuing
-        try:
-            await searching_msg.delete()
-        except Exception:
-            pass  
-
-        if not results:
-            return await update.message.edit(
-                "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇 Bot To Get Direct FILE📥</blockquote>",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]]),
-                disable_web_page_preview=True
-            )
-        
-        await update.message.edit(text=head + results, disable_web_page_preview=True)
-
-        # Auto-delete message after specified duration
-        await asyncio.sleep(AUTO_DELETE_DURATION)
-        await update.message.delete()
-
-    except Exception as e:
-        try:
-            await update.message.edit(f"❌ Error: {e}")
-            await asyncio.sleep(AUTO_DELETE_DURATION)
-            await update.message.delete()
         except Exception:
             pass  
