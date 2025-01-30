@@ -11,28 +11,6 @@ import difflib  # For fuzzy matching
 # Auto-delete duration in seconds
 AUTO_DELETE_DURATION = 60  # Adjust this value as needed
 
-# Function to perform token-based matching (based on query and movie title)
-def token_match(query, movie_name):
-    """
-    Token-based fuzzy matching function. Breaks both the query and movie title into tokens and compares them using fuzzy matching.
-    """
-    # Tokenize the query and movie title by splitting by spaces
-    query_tokens = query.lower().split()
-    movie_tokens = movie_name.lower().split()
-
-    # Compare tokens using difflib's SequenceMatcher for fuzzy matching
-    matched_tokens = 0
-    for token in query_tokens:
-        # Check for similarity with each token in the movie name
-        for movie_token in movie_tokens:
-            similarity = difflib.SequenceMatcher(None, token, movie_token).ratio()
-            if similarity > 0.7:  # You can adjust this threshold for more or less strict matching
-                matched_tokens += 2
-                break  # Stop after finding one matching token
-
-    # If a sufficient number of tokens match, return True
-    return matched_tokens >= len(query_tokens) // 2  # Match at least half of the tokens
-
 # Function to calculate best match using all 5 matching mechanisms
 def get_best_match(query, channel_movies):
     best_match = None
@@ -44,10 +22,9 @@ def get_best_match(query, channel_movies):
         jaccard = len(set(query.lower().split()) & set(title.lower().split())) / len(set(query.lower().split()) | set(title.lower().split()))
         cosine = len(set(query.lower().split()) & set(title.lower().split())) / (len(query.split()) * len(title.split()))**0.5
         phonetic = 1.0 if difflib.get_close_matches(query, [title], n=1, cutoff=0.8) else 0
-        token = token_match(query, title)  # Adding the token-based matching
 
         # Sum up the scores and find the best match
-        score = (levenshtein + jaccard + cosine + phonetic + token) / 5  # Now includes token match
+        score = (levenshtein + jaccard + cosine + phonetic) / 4  # No token match anymore
 
         if score > highest_score:
             highest_score = score
