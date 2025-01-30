@@ -44,10 +44,10 @@ async def search(bot, message):
 
     # Clean query (Remove @, #, http)
     query = message.text.strip()
-    query = ' '.join([word for word in query.split() if not word.startswith(('#', '@', 'http'))])
+    query = ' '.join([word for word in query.split() if not word.startswith(('#', '@', 'www', 'http'))])
 
     # Display "Searching..." message
-    searching_msg = await message.reply_text(f"<b>Searching : {query}</b>", disable_web_page_preview=True)
+    searching_msg = await message.reply_text(f"<b>Searching:</b> <i>{query}</i>", disable_web_page_preview=True)
 
     head = "🎬 <b>Search Results</b> 🎬\n\n"
     results = ""
@@ -55,9 +55,10 @@ async def search(bot, message):
     try:
         for channel in channels:
             try:
-                # Delete "Searching..." message before starting
-                await searching_msg.delete()
                 async for msg in User.search_messages(chat_id=channel, query=query):
+                    # Delete searching message before showing results
+                    await searching_msg.delete()
+                    
                     name = (msg.text or msg.caption).split("\n")[0]
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
                     
@@ -71,6 +72,7 @@ async def search(bot, message):
                 continue
 
         if not results:
+            await searching_msg.delete()  # Ensure searching message is deleted before showing failure
             movies = await search_imdb(query)
             buttons = [[InlineKeyboardButton(f"🎥 {movie['title']}", callback_data=f"recheck_{movie['id']}")] for movie in movies]
             msg = await message.reply_text(
@@ -85,6 +87,7 @@ async def search(bot, message):
         await msg.delete()
 
     except Exception as e:
+        await searching_msg.delete()  # Ensure searching message is deleted in case of error
         print(f"An error occurred: {e}")
         await message.reply_text(f"🚨 <b>Error!</b>\n\n⚠️ Something went wrong: <code>{e}</code>\n\nPlease try again later.", disable_web_page_preview=True)
 
