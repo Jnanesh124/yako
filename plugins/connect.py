@@ -109,37 +109,33 @@ async def disconnect(bot, message):
     await update_group(message.chat.id, {"channels": channels})
     await m.edit(f"✅ Successfully disconnected from [{chat.title}]({c_link})!", disable_web_page_preview=True)
 
-@Client.on_message(filters.group & filters.command("connections"))
+@Client.on_message(filters.command("connections") & filters.group)
 async def connections(bot, message):
-    group = await get_group(message.chat.id)
-    user_id = group["user_id"]
-    user_name = group["user_name"]
-    channels = group["channels"]
-    f_sub = group["f_sub"]
+    chat_id = message.chat.id
+    user_id = message.from_user.id
 
-    if not (await is_admin(bot, message.chat.id, message.from_user.id) or message.from_user.id == user_id):
-        return await message.reply(f"Only {user_name} (Group Owner) or group admins can use this command 😁")
+    try:
+        # 🔹 Get list of all admins (including owner)
+        admins = [admin.user.id async for admin in bot.get_chat_members(chat_id, filter="administrators")]
 
-    if not channels:
-        return await message.reply("This group is currently not connected to any channels!\nConnect one using /connect")
+        # 🔹 Check if the user is an admin
+        if user_id not in admins:
+            return await message.reply_text("Only Group Owner or Admins can use this command 😁")
 
-    text = "This Group is currently connected to:\n\n"
-    for channel in channels:
-        try:
-            chat = await bot.get_chat(channel)
-            name = chat.title
-            link = chat.invite_link
-            text += f"🔗 Connected Channel - [{name}]({link})\n"
-        except Exception as e:
-            await message.reply(f"❌ Error in {channel}:\n{e}")
+        # 🔹 Fetch connected channels for the group
+        channels = (await get_group(chat_id))["channels"]
+        
+        if not channels:
+            return await message.reply_text("No channels are connected to this group.")
 
-    if f_sub:
-        try:
-            f_chat = await bot.get_chat(f_sub)
-            f_title = f_chat.title
-            f_link = f_chat.invite_link
-            text += f"\nFSub: [{f_title}]({f_link})"
-        except Exception as e:
-            await message.reply(f"❌ Error in FSub ({f_sub})\n{e}")
+        text = "<b>Connected Channels:</b>\n"
+        for ch in channels:
+            text += f"• <code>{ch}</code>\n"
 
-    await message.reply(text=text, disable_web_page_preview=True)
+        await message.reply_text(text, disable_web_page_preview=True)
+
+    except UserNotParticipant:
+        await message.reply_text("You must be a member of the group to use this command.")
+    except Exception as e:
+        print(f"Error in /connections: {e}")
+        await message.reply_text("❌ Error fetching connections.")
