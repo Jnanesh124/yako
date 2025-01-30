@@ -42,19 +42,21 @@ async def search(bot, message):
     if message.text.startswith("/"):
         return
 
+    # Clean query (Remove @, #, http)
     query = message.text.strip()
     query = ' '.join([word for word in query.split() if not word.startswith(('#', '@', 'http'))])
+
+    # Display "Searching..." message
+    searching_msg = await message.reply_text(f"<b>Searching : {query}</b>", disable_web_page_preview=True)
 
     head = "🎬 <b>Search Results</b> 🎬\n\n"
     results = ""
 
-    # Show "Searching..." message
-    searching_msg = await message.reply_text("<b>Searching : {query}</b>", disable_web_page_preview=True)
-
     try:
         for channel in channels:
             try:
-                await searching_msg.delete()  # Remove "Searching..." message
+                # Delete "Searching..." message before starting
+                await searching_msg.delete()
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
