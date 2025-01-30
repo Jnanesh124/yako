@@ -2,7 +2,7 @@ from info import *
 from utils import *
 from client import User
 from pyrogram import Client, filters
-from pyrogram.types import ChatMember
+from pyrogram.types import ChatMember, ChatPrivileges
 
 # Improved helper function to check admin status
 async def is_admin(bot, chat_id, user_id):
@@ -20,11 +20,11 @@ async def connect(bot, message):
     bot_username = bot_user.username or bot_user.mention  # Fixes username error
 
     try:
-        group = await get_group(message.chat.id)
-        user_id = group["user_id"]
-        user_name = group["user_name"]
-        verified = group["verified"]
-        channels = group["channels"].copy()
+        group = await get_group(message.chat.id) or {}  # Prevent NoneType error
+        user_id = group.get("user_id")
+        user_name = group.get("user_name", "Unknown")
+        verified = group.get("verified", False)
+        channels = group.get("channels", [])
     except Exception as e:
         print(f"Error fetching group details: {e}")
         return await bot.leave_chat(message.chat.id)
@@ -69,11 +69,11 @@ async def disconnect(bot, message):
     bot_username = bot_user.username or bot_user.mention  # Fix username error
 
     try:
-        group = await get_group(message.chat.id)
-        user_id = group["user_id"]
-        user_name = group["user_name"]
-        verified = group["verified"]
-        channels = group["channels"].copy()
+        group = await get_group(message.chat.id) or {}  # Prevent NoneType error
+        user_id = group.get("user_id")
+        user_name = group.get("user_name", "Unknown")
+        verified = group.get("verified", False)
+        channels = group.get("channels", [])
     except Exception as e:
         print(f"Error fetching group details: {e}")
         return await bot.leave_chat(message.chat.id)
@@ -116,14 +116,15 @@ async def connections(bot, message):
 
     try:
         # 🔹 Get list of all admins (including owner)
-        admins = [admin.user.id async for admin in bot.get_chat_members(chat_id, filter="administrators")]
+        admins = [admin.user.id async for admin in bot.get_chat_administrators(chat_id)]
 
         # 🔹 Check if the user is an admin
         if user_id not in admins:
             return await message.reply_text("Only Group Owner or Admins can use this command 😁")
 
         # 🔹 Fetch connected channels for the group
-        channels = (await get_group(chat_id))["channels"]
+        group = await get_group(chat_id) or {}
+        channels = group.get("channels", [])
         
         if not channels:
             return await message.reply_text("No channels are connected to this group.")
@@ -134,8 +135,6 @@ async def connections(bot, message):
 
         await message.reply_text(text, disable_web_page_preview=True)
 
-    except UserNotParticipant:
-        await message.reply_text("You must be a member of the group to use this command.")
     except Exception as e:
         print(f"Error in /connections: {e}")
         await message.reply_text("❌ Error fetching connections.")
