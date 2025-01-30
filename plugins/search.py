@@ -112,7 +112,8 @@ async def recheck(bot, update):
 
     id = update.data.split("_")[-1]
     query = await search_imdb(id)
-    channels = (await get_group(update.message.chat.id))["channels"]
+    group = await get_group(update.message.chat.id) or {}  # Ensure it's a dictionary
+    channels = group.get("channels", [])  # Default to an empty list if 'channels' is missing
     head = "<b>👇 I Have Searched Movie With Wrong Spelling But Take care next time 👇</b>\n\n"
     results = ""
 
