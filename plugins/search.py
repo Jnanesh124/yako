@@ -47,52 +47,48 @@ async def search(bot, message):
     results = ""
 
     # 🔹 Show "Searching..." message & delete it instantly
-    searching_msg = await message.reply_text(f"<strong>Searching: {query}</strong>", disable_web_page_preview=True)
-    await asyncio.sleep(1)  # Small delay for visibility
-    try:
-        await searching_msg.delete()
-    except Exception:
-        pass  # Ignore errors if already deleted
+searching_msg = await message.reply_text(f"<strong>Searching: {query}</strong>", disable_web_page_preview=True)
 
-    try:
-        for channel in channels:
-            try:
-                async for msg in User.search_messages(chat_id=channel, query=query):
-                    name = (msg.text or msg.caption).split("\n")[0]
-                    best_match = get_best_match(query, [{"title": name, "link": msg.link}])
+# Deleting "Searching..." message as soon as it's sent
+await searching_msg.delete()
 
-                    if best_match and best_match["title"] == name:
-                        results += f"<strong>🍿 {best_match['title']}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
-                        
-            except (ChannelPrivate, PeerIdInvalid, ChannelInvalid):
-                print(f"Skipping invalid channel: {channel}")  
-                continue  
-            except Exception as e:
-                print(f"Error accessing channel {channel}: {e}")
-                continue  
-
-        if not results:
-            movies = await search_imdb(query)
-            buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
-            msg = await message.reply_text(
-                "<blockquote>😔 No direct results found, but here are some IMDb suggestions 😔</blockquote>",
-                reply_markup=InlineKeyboardMarkup(buttons)
-            )
-        else:
-            msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
-
-        await asyncio.sleep(AUTO_DELETE_DURATION)
-        await msg.delete()
-
-    except Exception as e:
-        print(f"Error in search: {e}")
+try:
+    for channel in channels:
         try:
-            await message.reply_text(f"❌ Error occurred: {e}")
-            await asyncio.sleep(AUTO_DELETE_DURATION)
-            await message.delete()
-        except Exception:
-            pass
+            async for msg in User.search_messages(chat_id=channel, query=query):
+                name = (msg.text or msg.caption).split("\n")[0]
+                best_match = get_best_match(query, [{"title": name, "link": msg.link}])
 
+                if best_match and best_match["title"] == name:
+                    results += f"<strong>🍿 {best_match['title']}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+        except (ChannelPrivate, PeerIdInvalid, ChannelInvalid):
+            print(f"Skipping invalid channel: {channel}")  
+            continue  
+        except Exception as e:
+            print(f"Error accessing channel {channel}: {e}")
+            continue  
+
+    if not results:
+        movies = await search_imdb(query)
+        buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
+        msg = await message.reply_text(
+            "<blockquote>😔 No direct results found, but here are some IMDb suggestions 😔</blockquote>",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+    else:
+        msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
+
+    await asyncio.sleep(AUTO_DELETE_DURATION)
+    await msg.delete()
+
+except Exception as e:
+    print(f"Error in search: {e}")
+    try:
+        await message.reply_text(f"❌ Error occurred: {e}")
+        await asyncio.sleep(AUTO_DELETE_DURATION)
+        await message.delete()
+    except Exception:
+        pass
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
