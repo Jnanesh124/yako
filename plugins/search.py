@@ -1,30 +1,32 @@
 import asyncio
+import difflib  # For fuzzy matching
+from time import time
 from info import *
 from utils import *
-from time import time
 from client import User
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.errors import ChannelPrivate, PeerIdInvalid
-import difflib  # For fuzzy matching
+from pyrogram.errors import ChannelPrivate, PeerIdInvalid, MessageNotModified
 
 # Auto-delete duration in seconds
-AUTO_DELETE_DURATION = 60  # Adjust this value as needed
+AUTO_DELETE_DURATION = 60  
 
-# Function to calculate best match using all 5 matching mechanisms
+# Function to calculate best match
 def get_best_match(query, channel_movies):
     best_match = None
     highest_score = 0
     for movie in channel_movies:
         title = movie["title"]
-        # Perform matching for each mechanism
-        levenshtein = difflib.SequenceMatcher(None, query, title).ratio()
-        jaccard = len(set(query.lower().split()) & set(title.lower().split())) / len(set(query.lower().split()) | set(title.lower().split()))
-        cosine = len(set(query.lower().split()) & set(title.lower().split())) / (len(query.split()) * len(title.split()))**0.5
-        phonetic = 1.0 if difflib.get_close_matches(query, [title], n=1, cutoff=0.8) else 0
 
-        # Sum up the scores and find the best match
-        score = (levenshtein + jaccard + cosine + phonetic) / 4  # No token match anymore
+        # Prevent division by zero
+        try:
+            levenshtein = difflib.SequenceMatcher(None, query, title).ratio()
+            jaccard = len(set(query.lower().split()) & set(title.lower().split())) / max(1, len(set(query.lower().split()) | set(title.lower().split())))
+            cosine = len(set(query.lower().split()) & set(title.lower().split())) / max(1, (len(query.split()) * len(title.split()))**0.5)
+            phonetic = 1.0 if difflib.get_close_matches(query, [title], n=1, cutoff=0.8) else 0
+            score = (levenshtein + jaccard + cosine + phonetic) / 4  
+        except ZeroDivisionError:
+            score = 0  
 
         if score > highest_score:
             highest_score = score
@@ -32,15 +34,15 @@ def get_best_match(query, channel_movies):
 
     return best_match
 
+
 @Client.on_message(filters.text & filters.group & filters.incoming & ~filters.command(["verify", "connect", "id"]))
 async def search(bot, message):
     f_sub = await force_sub(bot, message)
     if not f_sub:
         return
+    
     channels = (await get_group(message.chat.id))["channels"]
     if not channels:
-        return
-    if message.text.startswith("/"):
         return
 
     query = message.text.strip()
@@ -54,34 +56,31 @@ async def search(bot, message):
     # Display "Searching..." message
     searching_msg = await message.reply_text(f"<strong>Searching: {query}</strong>", disable_web_page_preview=True)
 
-    # Delete the searching message immediately to indicate the process has started
+    # Delete the searching message to indicate the process has started
     try:
         await searching_msg.delete()
     except Exception:
         pass
 
     try:
-        # Perform the movie search across channels
         for channel in channels:
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
 
-                    # Get the best match for the query and movie titles in the channel
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
 
                     if best_match and best_match["title"] == name:
                         results += f"<strong>🍿 {best_match['title']}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
                         
             except (ChannelPrivate, PeerIdInvalid):
+                print(f"Skipping invalid channel: {channel}")  # Log and continue
                 continue  
             except Exception as e:
                 print(f"Error accessing channel {channel}: {e}")
                 continue  
 
-        # If no results were found directly, try IMDb search
         if not results:
-            # Search IMDb for suggestions
             movies = await search_imdb(query)
             buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
             msg = await message.reply_text(
@@ -91,14 +90,13 @@ async def search(bot, message):
         else:
             msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
-        # Auto-delete message after specified duration
         await asyncio.sleep(AUTO_DELETE_DURATION)
         await msg.delete()
 
     except Exception as e:
         print(f"Error in search: {e}")
         try:
-            await message.edit(f"❌ Error occurred: {e}")
+            await message.reply_text(f"❌ Error occurred: {e}")
             await asyncio.sleep(AUTO_DELETE_DURATION)
             await message.delete()
         except Exception:
@@ -116,8 +114,13 @@ async def recheck(bot, update):
     if clicked != typed:
         return await update.answer("That's not for you! 👀", show_alert=True)
 
-    # Display "Searching..." message
-    searching_msg = await update.message.edit("Searching for IMDb movie...💥 Please wait")
+    new_text = "Searching for IMDb movie...💥 Please wait"
+
+    try:
+        if update.message.text != new_text:  
+            await update.message.edit(new_text)
+    except MessageNotModified:
+        pass  # Ignore error if message is not modified
 
     id = update.data.split("_")[-1]
     query = await search_imdb(id)
@@ -131,23 +134,17 @@ async def recheck(bot, update):
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
 
-                    # Get the best match for the query and movie titles in the channel
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
 
                     if best_match and best_match["title"] == name:
                         results += f"<strong>🍿 {best_match['title']}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
                         
             except (ChannelPrivate, PeerIdInvalid):
+                print(f"Skipping invalid channel: {channel}")  
                 continue  
             except Exception as e:
                 print(f"Error accessing channel {channel}: {e}")
                 continue  
-
-        # Ensure searching message is deleted before continuing
-        try:
-            await searching_msg.delete()
-        except Exception:
-            pass  
 
         if not results:
             return await update.message.edit(
@@ -158,11 +155,11 @@ async def recheck(bot, update):
         
         await update.message.edit(text=head + results, disable_web_page_preview=True)
 
-        # Auto-delete message after specified duration
         await asyncio.sleep(AUTO_DELETE_DURATION)
         await update.message.delete()
 
     except Exception as e:
+        print(f"Error in recheck: {e}")
         try:
             await update.message.edit(f"❌ Error: {e}")
             await asyncio.sleep(AUTO_DELETE_DURATION)
