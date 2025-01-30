@@ -5,7 +5,7 @@ from time import time
 from client import User
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.errors import ChannelPrivate, PeerIdInvalid
+from pyrogram.errors import ChannelPrivate, PeerIdInvalid, ChannelInvalid
 import difflib  # For fuzzy matching
 
 # Auto-delete duration in seconds
@@ -45,24 +45,22 @@ async def search(bot, message):
     query = message.text.strip()
     query = ' '.join([word for word in query.split() if not word.startswith(('#', '@', 'http'))])
 
-    head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
+    head = "🎬 <b>Search Results</b> 🎬\n\n"
     results = ""
 
     # Show "Searching..." message
-    searching_msg = await message.reply_text(f"<strong>Searching: {query}</strong>", disable_web_page_preview=True)
+    searching_msg = await message.reply_text("<b>Searching : {query}</b>", disable_web_page_preview=True)
 
     try:
         for channel in channels:
-            # Check if the bot can access the channel, handle potential errors
             try:
-                # Deleting "Searching..." message as soon as the main process starts
-                await searching_msg.delete()
+                await searching_msg.delete()  # Remove "Searching..." message
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
                     
                     if best_match and best_match["title"] == name:
-                        results += f"<strong>🍿 {best_match['title']}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
+                        results += f"🍿 <b>{best_match['title']}</b>\n🔗 <a href='{msg.link}'>📥 Download Here</a>\n\n"
             except (ChannelPrivate, PeerIdInvalid, ChannelInvalid):
                 print(f"Skipping invalid channel: {channel}")  
                 continue  
@@ -72,22 +70,21 @@ async def search(bot, message):
 
         if not results:
             movies = await search_imdb(query)
-            buttons = [[InlineKeyboardButton(movie['title'], callback_data=f"recheck_{movie['id']}")] for movie in movies]
+            buttons = [[InlineKeyboardButton(f"🎥 {movie['title']}", callback_data=f"recheck_{movie['id']}")] for movie in movies]
             msg = await message.reply_text(
-                text="<blockquote>😔 Only Type Movie Name 😔</blockquote>",
+                text="😔 <b>No direct links found!</b>\n\n🔍 Try searching with a different name!",
                 reply_markup=InlineKeyboardMarkup(buttons)
             )
         else:
             msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
-        # Auto-delete the message after the specified duration
+        # Auto-delete after specified duration
         await asyncio.sleep(AUTO_DELETE_DURATION)
         await msg.delete()
 
     except Exception as e:
         print(f"An error occurred: {e}")
-        await message.reply_text(f"❌ Error occurred: {e}")
-
+        await message.reply_text(f"🚨 <b>Error!</b>\n\n⚠️ Something went wrong: <code>{e}</code>\n\nPlease try again later.", disable_web_page_preview=True)
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
@@ -98,28 +95,26 @@ async def recheck(bot, update):
         return await update.message.delete()
 
     if clicked != typed:
-        return await update.answer("That's not for you! 👀", show_alert=True)
+        return await update.answer("⚠️ That's not for you! 👀", show_alert=True)
 
-    m = await update.message.edit("Searching..💥")
+    m = await update.message.edit("🔍 <b>Rechecking the movie name...</b> ⏳")
     id = update.data.split("_")[-1]
     query = await search_imdb(id)
     channels = (await get_group(update.message.chat.id))["channels"]
-    head = "<b>👇 I Have Searched Movie With Wrong Spelling But Take care next time 👇</b>\n\n"
+    head = "<b>✅ Movie found! Here is the correct match:</b>\n\n"
     results = ""
 
     try:
         for channel in channels:
-            # Check if the bot can access the channel, handle potential errors
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
 
-                    # Use token-based fuzzy matching here
                     if best_match and best_match["title"] == name:
-                        results += f"<strong>🍿 {best_match['title']}</strong>\n<strong>👉🏻 <a href='{msg.link}'>DOWNLOAD</a> 👈🏻</strong>\n\n"
-                        
-             except (ChannelPrivate, PeerIdInvalid, ChannelInvalid):
+                        results += f"🍿 <b>{best_match['title']}</b>\n🔗 <a href='{msg.link}'>📥 Download Here</a>\n\n"
+
+            except (ChannelPrivate, PeerIdInvalid, ChannelInvalid):
                 print(f"Skipping invalid channel: {channel}")  
                 continue  
             except Exception as e:
@@ -128,18 +123,18 @@ async def recheck(bot, update):
 
         if not results:
             return await update.message.edit(
-                "<blockquote>🥹 Sorry, no terabox link found ❌\n\nRequest Below 👇  Bot To Get Direct FILE📥</blockquote>",
+                "🥹 <b>Sorry, no direct download link found! ❌</b>\n\n📥 Try requesting the file from our bot below:",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
             )
+
         await update.message.edit(text=head + results, disable_web_page_preview=True)
 
-        # Auto-delete the message after the specified duration
+        # Auto-delete after specified duration
         await asyncio.sleep(AUTO_DELETE_DURATION)
         await update.message.delete()
 
     except Exception as e:
-        await update.message.edit(f"❌ Error: {e}")
-
+        await update.message.edit(f"🚨 <b>Error!</b>\n\n⚠️ Something went wrong: <code>{e}</code>")
 
 @Client.on_callback_query(filters.regex(r"^request"))
 async def request(bot, update):
@@ -150,19 +145,19 @@ async def request(bot, update):
         return await update.message.delete()
 
     if clicked != typed:
-        return await update.answer("That's not for you! 👀", show_alert=True)
+        return await update.answer("⚠️ That's not for you! 👀", show_alert=True)
 
     admin = (await get_group(update.message.chat.id))["user_id"]
     id = update.data.split("_")[1]
     name = await search_imdb(id)
     url = "https://www.imdb.com/title/tt" + id
-    text = f"#RequestFromYourGroup\n\nName: {name}\nIMDb: {url}"
-    
+    text = f"📢 <b>New Movie Request!</b>\n\n🎬 <b>Name:</b> {name}\n🎟️ <b>IMDb:</b> <a href='{url}'>Click Here</a>"
+
     msg = await bot.send_message(chat_id=admin, text=text, disable_web_page_preview=True)
 
-    # Auto-delete the message after the specified duration
+    # Auto-delete after specified duration
     await asyncio.sleep(AUTO_DELETE_DURATION)
     await msg.delete()
 
-    await update.answer("✅ Request Sent To Admin", show_alert=True)
+    await update.answer("✅ <b>Request Sent to Admin!</b>", show_alert=True)
     await update.message.delete()
