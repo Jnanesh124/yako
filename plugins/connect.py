@@ -105,7 +105,7 @@ async def disconnect(bot, message):
         await User.leave_chat(channel)
     except Exception as e:
         text = (f"❌ Error: {str(e)}\nMake sure I'm an admin in that channel & this group "
-                f"with all permissions and {(user.username or user.mention)} is not banned there.")
+                f"with all permissions and {(User.username or user.mention)} is not banned there.")
         return await m.edit(text)
     
     await update_group(message.chat.id, {"channels": channels})
