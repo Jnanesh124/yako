@@ -46,12 +46,13 @@ async def search(bot, message):
     head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
     results = ""
 
+    # 🔹 Show "Searching..." message & delete it instantly
     searching_msg = await message.reply_text(f"<strong>Searching: {query}</strong>", disable_web_page_preview=True)
-
+    await asyncio.sleep(1)  # Small delay for visibility
     try:
         await searching_msg.delete()
     except Exception:
-        pass
+        pass  # Ignore errors if already deleted
 
     try:
         for channel in channels:
