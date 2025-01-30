@@ -46,15 +46,14 @@ async def search(bot, message):
     head = "<blockquote>👀 Here are the results 👀</blockquote>\n\n"
     results = ""
 
-    # 🔹 Show "Searching..." message & delete it instantly
+    # Show "Searching..." message
     searching_msg = await message.reply_text(f"<strong>Searching: {query}</strong>", disable_web_page_preview=True)
-
-    # Deleting "Searching..." message as soon as it's sent
-    await searching_msg.delete()
 
     try:
         for channel in channels:
             try:
+                # Deleting "Searching..." message as soon as the main process starts
+                await searching_msg.delete()
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
@@ -83,6 +82,7 @@ async def search(bot, message):
 
     except Exception as e:
         print(f"An error occurred: {e}")
+        await message.reply_text(f"❌ Error occurred: {e}")
 
 @Client.on_callback_query(filters.regex(r"^recheck"))
 async def recheck(bot, update):
