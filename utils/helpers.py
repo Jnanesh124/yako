@@ -24,10 +24,13 @@ async def add_group(group_id, group_name, user_name, user_id, channels, f_sub, v
     except DuplicateKeyError:
        pass
 
-async def get_group(id):
-    data = {'_id':id}
-    group = await grp_col.find_one(data)
-    return dict(group)
+async def get_group(chat_id):
+    try:
+        group = await db.groups.find_one({"chat_id": chat_id})
+        return dict(group) if group else {}  # ✅ Return empty dictionary if not found
+    except Exception as e:
+        print(f"Error fetching group: {e}")
+        return {}  # ✅ Return empty dictionary on error
 
 async def update_group(id, new_data):
     data = {"_id":id}
