@@ -2,7 +2,7 @@ from info import *
 from utils import *
 from client import User
 from pyrogram import Client, filters
-from pyrogram.types import ChatMember, ChatPrivileges
+from pyrogram.types import ChatMember, ChatPrivileges, ChatMembersFilter
 
 # Improved helper function to check admin status
 async def is_admin(bot, chat_id, user_id):
@@ -116,9 +116,7 @@ async def connections(bot, message):
 
     try:
         # ✅ Fetch all admins (including the owner)
-        admins = []
-        async for member in bot.get_chat_administrators(chat_id):  # ✅ FIXED
-            admins.append(member.user.id)
+        admins = [admin.user.id for admin in await bot.get_chat_members(chat_id, filter=ChatMembersFilter.ADMINISTRATORS)]  
 
         # ✅ Check if the user is an admin
         if user_id not in admins:
