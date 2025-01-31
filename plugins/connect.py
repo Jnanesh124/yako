@@ -115,23 +115,28 @@ async def connections(bot, message):
     user_id = message.from_user.id
 
     try:
-        # 🔹 Get list of all admins (including owner)
-        admins = [admin.user.id async for admin in bot.get_chat_administrators(chat_id)]
+        # Fetch all admins (including the owner)
+        chat_members = await bot.get_chat_members(chat_id)
+        admins = [member.user.id for member in chat_members if member.status in ["administrator", "creator"]]
 
-        # 🔹 Check if the user is an admin
+        # Check if the user is an admin
         if user_id not in admins:
             return await message.reply_text("Only Group Owner or Admins can use this command 😁")
 
-        # 🔹 Fetch connected channels for the group
+        # Fetch connected channels for the group
         group = await get_group(chat_id) or {}
         channels = group.get("channels", [])
-        
+
         if not channels:
             return await message.reply_text("No channels are connected to this group.")
 
         text = "<b>Connected Channels:</b>\n"
         for ch in channels:
-            text += f"• <code>{ch}</code>\n"
+            try:
+                chat = await bot.get_chat(ch)
+                text += f"• <b>{chat.title}</b> (<code>{ch}</code>)\n"
+            except Exception as e:
+                text += f"• ❌ <code>{ch}</code> (Not Accessible)\n"
 
         await message.reply_text(text, disable_web_page_preview=True)
 
