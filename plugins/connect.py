@@ -2,7 +2,7 @@ from info import *
 from utils import *
 from client import User
 from pyrogram import Client, filters
-from pyrogram.types import ChatMember, ChatPrivileges, ChatMembersFilter
+from pyrogram.types import ChatMember, ChatPrivileges, ChatMemberStatus  # ✅ Import correct Enum
 
 # Improved helper function to check admin status
 async def is_admin(bot, chat_id, user_id):
@@ -109,6 +109,9 @@ async def disconnect(bot, message):
     await update_group(message.chat.id, {"channels": channels})
     await m.edit(f"✅ Successfully disconnected from [{chat.title}]({c_link})!", disable_web_page_preview=True)
 
+from pyrogram import Client, filters
+from pyrogram.enums import ChatMemberStatus  # ✅ Import correct Enum
+
 @Client.on_message(filters.command("connections") & filters.group)
 async def connections(bot, message):
     chat_id = message.chat.id
@@ -116,7 +119,11 @@ async def connections(bot, message):
 
     try:
         # ✅ Fetch all admins (including the owner)
-        admins = [admin.user.id for admin in await bot.get_chat_members(chat_id, filter=ChatMembersFilter.ADMINISTRATORS)]  
+        admins = [
+            member.user.id
+            for member in await bot.get_chat_members(chat_id)
+            if member.status in {ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}
+        ]
 
         # ✅ Check if the user is an admin
         if user_id not in admins:
@@ -142,3 +149,4 @@ async def connections(bot, message):
     except Exception as e:
         print(f"Error in /connections: {e}")
         await message.reply_text("❌ Error fetching connections.")
+
