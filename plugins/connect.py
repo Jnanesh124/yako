@@ -115,14 +115,16 @@ async def connections(bot, message):
     user_id = message.from_user.id
 
     try:
-        # Fetch all admins (including the owner)
-        admins = [admin.user.id async for admin in bot.get_chat_administrators(chat_id)]
+        # ✅ Fetch all admins (including the owner)
+        admins = []
+        async for member in bot.get_chat_members(chat_id, filter="administrators"):
+            admins.append(member.user.id)
 
-        # Check if the user is an admin
+        # ✅ Check if the user is an admin
         if user_id not in admins:
             return await message.reply_text("Only Group Owner or Admins can use this command 😁")
 
-        # Fetch connected channels for the group
+        # ✅ Fetch connected channels for the group
         group = await get_group(chat_id) or {}
         channels = group.get("channels", [])
 
@@ -142,3 +144,4 @@ async def connections(bot, message):
     except Exception as e:
         print(f"Error in /connections: {e}")
         await message.reply_text("❌ Error fetching connections.")
+
