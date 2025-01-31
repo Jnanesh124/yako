@@ -51,6 +51,7 @@ async def search(bot, message):
 
     head = "🎬 <b>Search Results</b> 🎬\n\n"
     results = ""
+    seen_titles = set()  # Store seen titles to avoid duplicates
 
     try:
         for channel in channels:
@@ -60,10 +61,14 @@ async def search(bot, message):
                     await searching_msg.delete()
                     
                     name = (msg.text or msg.caption).split("\n")[0]
+                    if name in seen_titles:
+                        continue  # Skip duplicate titles
+                    
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
                     
                     if best_match and best_match["title"] == name:
                         results += f"🍿 <b>{best_match['title']}</b>\n🔗 <a href='{msg.link}'>📥 Download Here</a>\n\n"
+                        seen_titles.add(name)  # Mark this title as seen
             except (ChannelPrivate, PeerIdInvalid, ChannelInvalid):
                 print(f"Skipping invalid channel: {channel}")  
                 continue  
@@ -74,10 +79,15 @@ async def search(bot, message):
         if not results:
             await searching_msg.delete()  # Ensure searching message is deleted before showing failure
             movies = await search_imdb(query)
-            buttons = [[InlineKeyboardButton(f"🎥 {movie['title']}", callback_data=f"recheck_{movie['id']}")] for movie in movies]
-            msg = await message.reply_text(
+            if movies:
+                buttons = [[InlineKeyboardButton(f"🎥 {movie['title']}", callback_data=f"recheck_{movie['id']}")] for movie in movies]
+                reply_markup = InlineKeyboardMarkup(buttons)
+            else:
+                reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
+
+            await message.reply_text(
                 text="😔 <b>No direct links found!</b>\n\n🔍 Try searching with a different name!",
-                reply_markup=InlineKeyboardMarkup(buttons)
+                reply_markup=reply_markup
             )
         else:
             msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
@@ -108,16 +118,21 @@ async def recheck(bot, update):
     channels = (await get_group(update.message.chat.id))["channels"]
     head = "<b>✅ Movie found! Here is the correct match:</b>\n\n"
     results = ""
+    seen_titles = set()
 
     try:
         for channel in channels:
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
                     name = (msg.text or msg.caption).split("\n")[0]
+                    if name in seen_titles:
+                        continue
+                    
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
 
                     if best_match and best_match["title"] == name:
                         results += f"🍿 <b>{best_match['title']}</b>\n🔗 <a href='{msg.link}'>📥 Download Here</a>\n\n"
+                        seen_titles.add(name)
 
             except (ChannelPrivate, PeerIdInvalid, ChannelInvalid):
                 print(f"Skipping invalid channel: {channel}")  
@@ -140,7 +155,7 @@ async def recheck(bot, update):
 
     except Exception as e:
         await update.message.edit(f"🚨 <b>Error!</b>\n\n⚠️ Something went wrong: <code>{e}</code>")
-
+        
 @Client.on_callback_query(filters.regex(r"^request"))
 async def request(bot, update):
     clicked = update.from_user.id
