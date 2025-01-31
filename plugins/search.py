@@ -52,6 +52,7 @@ async def search(bot, message):
     head = "🎬 <b>Search Results</b> 🎬\n\n"
     results = ""
     seen_titles = set()  # Store seen titles to avoid duplicates
+    msg = None  # Initialize msg to avoid reference issues
 
     try:
         for channel in channels:
@@ -92,9 +93,10 @@ async def search(bot, message):
         else:
             msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
-        # Auto-delete after specified duration
-        await asyncio.sleep(AUTO_DELETE_DURATION)
-        await msg.delete()
+        # Auto-delete after specified duration if msg exists
+        if msg:
+            await asyncio.sleep(AUTO_DELETE_DURATION)
+            await msg.delete()
 
     except Exception as e:
         await searching_msg.delete()  # Ensure searching message is deleted in case of error
