@@ -116,8 +116,7 @@ async def connections(bot, message):
 
     try:
         # Fetch all admins (including the owner)
-        chat_members = await bot.get_chat_members(chat_id)
-        admins = [member.user.id for member in chat_members if member.status in ["administrator", "creator"]]
+        admins = [admin.user.id async for admin in bot.get_chat_administrators(chat_id)]
 
         # Check if the user is an admin
         if user_id not in admins:
@@ -135,7 +134,7 @@ async def connections(bot, message):
             try:
                 chat = await bot.get_chat(ch)
                 text += f"• <b>{chat.title}</b> (<code>{ch}</code>)\n"
-            except Exception as e:
+            except Exception:
                 text += f"• ❌ <code>{ch}</code> (Not Accessible)\n"
 
         await message.reply_text(text, disable_web_page_preview=True)
