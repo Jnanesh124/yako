@@ -4,16 +4,21 @@ class script(object):
 𝐈 𝐀𝐦 𝐚𝐮𝐭𝐨 𝐋𝐢𝐧𝐤 𝐒𝐞𝐚𝐫𝐜𝐡 𝐁𝐨𝐭 𝐅𝐫𝐨𝐦 𝐂𝐡𝐚𝐧𝐧𝐞𝐥 𝐭𝐨 𝐆𝐫𝐨𝐮𝐩 👥
 
 𝐅𝐞𝐚𝐭𝐮𝐫𝐞𝐬 𝐈 𝐡𝐚𝐯𝐞 👇
-👉 𝐀𝐮𝐭𝐨 𝐝𝐞𝐥𝐞𝐭𝐞 𝐭𝐨 𝐚𝐯𝐨𝐢𝐝 𝐂𝐨𝐩𝐲𝐫𝐢𝐠𝐡𝐭 ✅ 
-👉 𝐒𝐩𝐞𝐥𝐥𝐢𝐧𝐠 𝐂𝐡𝐞𝐜𝐤 𝐓𝐨 𝐡𝐞𝐥𝐩 𝐭𝐨 𝐠𝐞𝐭 𝐜𝐨𝐫𝐫𝐞𝐜𝐭 𝐌𝐨𝐯𝐢𝐞 ✅
-👉 𝐯𝐞𝐫𝐲 𝐒𝐩𝐞𝐞𝐝 ✅
 
-💥 Subscribe my YouTube channel 
-link https://youtube.com/@jn2flix?si=zezyVgm-rZiGGuLm
+<blockquote>👉 auto delete added ( to avoid copyreight)
+👉 duplicate post skip to make easy to get movie
+👉 fuzzy 4 spelling check added to get perfect result
+👉 UI updated
+👉 all error debug added 
+👉 IMDB spelling Check Added
+👉 100% no bug 0% error Code
+👉 Speed Is Greate ( Seraching Speed)
+👉 Deployeble in HEROKU , KOYEB, RENDER, VPS</blockquote>
 
-MORE BOTS :- https://t.me/JN2FLIX
+THIS BOT REPO ALSO SELL MSG TO BUY :- 
 
- 𝐈 𝐚𝐦 𝐓𝐨𝐭𝐚𝐥𝐥𝐲 𝐅𝐫𝐞𝐞 𝐍𝐨 𝐍𝐞𝐞𝐝 𝐓𝐨 𝐏𝐚𝐲✌"""
+💥 MORE BOTS :- @JN2FLIX
+💥 BACKUP CHANNEL :- @ROCKERSBACKUP"""
 
     HELP = """🫂 How To Connect And Use 🫂
 
@@ -24,20 +29,18 @@ MORE BOTS :- https://t.me/JN2FLIX
 👉Send  /verify  command In Group 
 
 🚀Step 3
-👉After I will accept within 24hours are message me @alonekingjnanesh 
+👉After I will accept within 24hours 
 
 🚀Step 4
 👉After verify add unlimited Channel  /connect -1004658687
 
-🫂 U still Not Understand Message Me @alonekingjnanesh</b>"""
+🫂 U still Not Understand Message Me @rockersjnbot</b>"""
 
-    ABOUT = """Powered By @ROCKERSBACKUP 
+    ABOUT = """Powered By @ROCKERSBACKUP @JN2FLIX
 
 ✯ Mʏ Nᴀᴍᴇ:  {}
-✯ Cʀᴇᴀᴛᴏʀ: <a href='tg://user?id=5047601096'>Jnanesh gowda</a>
 ✯ Lᴀɴɢᴜᴀɢᴇ: <a href='https://www.python.org'>Pʏᴛʜᴏɴ 3</a>
-✯ DᴀᴛᴀBᴀsᴇ: <a href='https://cloud.mongodb.com/'>MᴏɴɢᴏDB</a>
-✯ Bᴏᴛ Sᴇʀᴠᴇʀ: : <a href='https://heroku.com'>Heroku</a>"""
+✯ DᴀᴛᴀBᴀsᴇ: <a href='https://cloud.mongodb.com/'>MᴏɴɢᴏDB</a>"""
 
     STATS = """My Status 💫
 
