@@ -117,7 +117,7 @@ async def connections(bot, message):
     try:
         # ✅ Fetch all admins (including the owner)
         admins = []
-        async for member in bot.get_chat_members(chat_id, filter="administrators"):
+        async for member in bot.get_chat_administrators(chat_id):  # ✅ FIXED
             admins.append(member.user.id)
 
         # ✅ Check if the user is an admin
@@ -144,4 +144,3 @@ async def connections(bot, message):
     except Exception as e:
         print(f"Error in /connections: {e}")
         await message.reply_text("❌ Error fetching connections.")
-
