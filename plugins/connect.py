@@ -59,7 +59,7 @@ async def disconnect(bot, message):
 
     try:
         group = await get_group(message.chat.id) or {}
-        user_id = group.get("user_id")
+        group_owner_id = group.get("user_id")  # Rename to avoid confusion
         user_name = group.get("user_name", "Unknown")
         verified = group.get("verified", False)
         channels = group.get("channels", [])
@@ -67,7 +67,7 @@ async def disconnect(bot, message):
         print(f"Error fetching group details: {e}")
         return await bot.leave_chat(message.chat.id)
 
-    if not (await is_admin(bot, message.chat.id, message.from_user.id) or message.from_user.id in [user_id, 6605647659]):
+    if not (await is_admin(bot, message.chat.id, message.from_user.id) or message.from_user.id in [group_owner_id, 6605647659]):
         return await m.edit(f"Only {user_name} (Group Owner), group admins, or user 6605647659 can use this command 😁")
 
     if not verified:
@@ -83,6 +83,20 @@ async def disconnect(bot, message):
     try:
         chat = await bot.get_chat(channel)
         c_link = chat.invite_link
+
+        # Check if the bot is a member of the channel
+        try:
+            await User.get_chat_member(channel, bot_user.id)
+        except Exception as e:
+            if "USER_NOT_PARTICIPANT" in str(e):
+                # Bot is not a member of the channel, but we can still remove it from the database
+                channels.remove(channel)
+                await update_group(message.chat.id, {"channels": channels})
+                return await m.edit("✅ The bot is not a member of the channel, but it has been successfully disconnected from the database.")
+            else:
+                raise e
+
+        # Leave the channel
         await User.leave_chat(channel)
         channels.remove(channel)
     except Exception as e:
@@ -103,13 +117,13 @@ async def connections(bot, message):
 
     try:
         group = await get_group(chat_id) or {}
-        user_id = group.get("user_id")
+        group_owner_id = group.get("user_id")  # Rename to avoid confusion
         user_name = group.get("user_name", "Unknown")
         verified = group.get("verified", False)
         channels = group.get("channels", [])
 
         # Check if the user is an admin or the group owner
-        if not (await is_admin(bot, chat_id, user_id) or user_id == message.from_user.id):
+        if not (await is_admin(bot, chat_id, user_id) or user_id == group_owner_id):
             return await message.reply_text(f"Only {user_name} (Group Owner) or group admins can use this command 😁")
 
         if not verified:
