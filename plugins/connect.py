@@ -1,17 +1,8 @@
 from info import *
-from utils import *
+from utils_helper import *  # Import from utils_helper.py
 from client import User
 from pyrogram import Client, filters
-from pyrogram.enums import ChatMemberStatus  # ✅ Correct import for user status
-
-# Helper function to check admin status
-async def is_admin(bot, chat_id, user_id):
-    try:
-        member = await bot.get_chat_member(chat_id, user_id)
-        return member.status in {ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}
-    except Exception as e:
-        print(f"Error checking admin status: {e}")
-        return False
+from pyrogram.enums import ChatMemberStatus  # Correct import for user status
 
 @Client.on_message(filters.group & filters.command("connect"))
 async def connect(bot, message):
@@ -111,31 +102,34 @@ async def connections(bot, message):
     user_id = message.from_user.id
 
     try:
-        admins = [
-            member.user.id
-            for member in await bot.get_chat_members(chat_id)
-            if member.status in {ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}
-        ]
-
-        if user_id not in admins:
-            return await message.reply_text("Only Group Owner or Admins can use this command 😁")
-
         group = await get_group(chat_id) or {}
+        user_id = group.get("user_id")
+        user_name = group.get("user_name", "Unknown")
+        verified = group.get("verified", False)
         channels = group.get("channels", [])
+
+        # Check if the user is an admin or the group owner
+        if not (await is_admin(bot, chat_id, user_id) or user_id == message.from_user.id):
+            return await message.reply_text(f"Only {user_name} (Group Owner) or group admins can use this command 😁")
+
+        if not verified:
+            return await message.reply_text("This chat is not verified!\nUse /verify")
 
         if not channels:
             return await message.reply_text("No channels are connected to this group.")
 
+        # Build the list of connected channels
         text = "<b>Connected Channels:</b>\n"
-        for ch in channels:
+        for channel_id in channels:
             try:
-                chat = await bot.get_chat(ch)
-                text += f"• <b>{chat.title}</b> (<code>{ch}</code>)\n"
-            except Exception:
-                text += f"• ❌ <code>{ch}</code> (Not Accessible)\n"
+                chat = await bot.get_chat(channel_id)
+                text += f"• <b>{chat.title}</b> (<code>{channel_id}</code>)\n"
+            except Exception as e:
+                print(f"Error fetching channel {channel_id}: {e}")
+                text += f"• ❌ <code>{channel_id}</code> (Not Accessible)\n"
 
         await message.reply_text(text, disable_web_page_preview=True)
 
     except Exception as e:
         print(f"Error in /connections: {e}")
-        await message.reply_text("❌ Error fetching connections.")
+        await message.reply_text("❌ Error fetching connections. Please try again later.")
