@@ -3,7 +3,7 @@ from info import *
 from pyrogram import enums
 from imdb import Cinemagoer
 from pymongo.errors import DuplicateKeyError
-from pyrogram.errors import UserNotParticipant
+from pyrogram.errors import UserNotParticipant, FloodWait, InputUserDeactivated, UserIsBlocked, PeerIdInvalid
 from motor.motor_asyncio import AsyncIOMotorClient
 from pyrogram.types import ChatPermissions, InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -15,6 +15,27 @@ dlt_col  = db["Auto-Delete"]
 
 ia = Cinemagoer()
 
+# Add the is_admin function here
+async def is_admin(bot, chat_id, user_id):
+    """
+    Check if a user is an admin or owner in a specific chat.
+    
+    Args:
+        bot: The Pyrogram Client instance.
+        chat_id: The ID of the chat (group/channel).
+        user_id: The ID of the user to check.
+    
+    Returns:
+        bool: True if the user is an admin or owner, False otherwise.
+    """
+    try:
+        member = await bot.get_chat_member(chat_id, user_id)
+        return member.status in {enums.ChatMemberStatus.ADMINISTRATOR, enums.ChatMemberStatus.OWNER}
+    except Exception as e:
+        print(f"Error checking admin status: {e}")
+        return False
+
+# Rest of your existing code...
 async def add_group(group_id, group_name, user_name, user_id, channels, f_sub, verified):
     data = {"_id": group_id, "name":group_name, 
             "user_id":user_id, "user_name":user_name,
