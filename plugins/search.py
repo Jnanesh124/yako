@@ -86,15 +86,19 @@ async def search(bot, message):
             else:
                 reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
 
-            await message.reply_text(
+            no_results_msg = await message.reply_text(
                 text="😔 <b>No direct links found!</b>\n\n🔍 Try searching with a different name!",
                 reply_markup=reply_markup
             )
+
+            # Auto-delete after specified duration
+            await asyncio.sleep(AUTO_DELETE_DURATION)
+            await no_results_msg.delete()
+
         else:
             msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
-        # Auto-delete after specified duration if msg exists
-        if msg:
+            # Auto-delete after specified duration if msg exists
             await asyncio.sleep(AUTO_DELETE_DURATION)
             await msg.delete()
 
@@ -144,10 +148,15 @@ async def recheck(bot, update):
                 continue
 
         if not results:
-            return await update.message.edit(
+            no_results_msg = await update.message.edit(
                 "🥹 <b>Sorry, no direct download link found! ❌</b>\n\n📥 Try requesting the file from our bot below:",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Get Direct FILE Here 📥", url="https://t.me/Theater_Print_Movies_Search_bot")]])
             )
+
+            # Auto-delete after specified duration
+            await asyncio.sleep(AUTO_DELETE_DURATION)
+            await no_results_msg.delete()
+            return
 
         await update.message.edit(text=head + results, disable_web_page_preview=True)
 
