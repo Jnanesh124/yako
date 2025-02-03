@@ -42,43 +42,54 @@ async def search(bot, message):
     if message.text.startswith("/"):
         return
 
-    # Clean query (Remove @, #, http)
+    # Clean query
     query = message.text.strip()
     query = ' '.join([word for word in query.split() if not word.startswith(('#', '@', 'www', 'http'))])
 
     # Display "Searching..." message
     searching_msg = await message.reply_text(f"<b>Searching:</b> <i>{query}</i>", disable_web_page_preview=True)
 
+    # Schedule auto-delete of searching message in case of a crash
+    async def delete_searching_msg_after_timeout():
+        await asyncio.sleep(AUTO_DELETE_DURATION)
+        try:
+            await searching_msg.delete()
+        except:
+            pass  # Ignore if already deleted
+
+    asyncio.create_task(delete_searching_msg_after_timeout())
+
     head = "🎬 <b>Search Results</b> 🎬\n\n"
     results = ""
-    seen_titles = set()  # Store seen titles to avoid duplicates
-    msg = None  # Initialize msg to avoid reference issues
+    seen_titles = set()
 
     try:
         for channel in channels:
             try:
                 async for msg in User.search_messages(chat_id=channel, query=query):
-                    # Delete searching message before showing results
-                    await searching_msg.delete()
-                    
                     name = (msg.text or msg.caption).split("\n")[0]
                     if name in seen_titles:
-                        continue  # Skip duplicate titles
-                    
+                        continue
+
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
-                    
+
                     if best_match and best_match["title"] == name:
-                        results += f"🍿 <b>{best_match['title']}</b>\n🔗 <a href='{msg.link}'>📥 Download Here</a>\n\n"
-                        seen_titles.add(name)  # Mark this title as seen
+                        results += f"🍿 <strong>{best_match['title']}\n🔗 <a href='{msg.link}'>📥 Download Here</a></strong>\n\n"
+                        seen_titles.add(name)
+
             except (ChannelPrivate, PeerIdInvalid, ChannelInvalid):
-                print(f"Skipping invalid channel: {channel}")  
                 continue  
             except Exception as e:
                 print(f"Error accessing channel {channel}: {e}")
                 continue
 
         if not results:
-            await searching_msg.delete()  # Ensure searching message is deleted before showing failure
+            # Ensure searching message is deleted before failure message
+            try:
+                await searching_msg.delete()
+            except:
+                pass  
+
             movies = await search_imdb(query)
             if movies:
                 buttons = [[InlineKeyboardButton(f"🎥 {movie['title']}", callback_data=f"recheck_{movie['id']}")] for movie in movies]
@@ -91,19 +102,27 @@ async def search(bot, message):
                 reply_markup=reply_markup
             )
 
-            # Auto-delete after specified duration
             await asyncio.sleep(AUTO_DELETE_DURATION)
             await no_results_msg.delete()
 
         else:
+            # Ensure searching message is deleted before showing results
+            try:
+                await searching_msg.delete()
+            except:
+                pass  
+
             msg = await message.reply_text(text=head + results, disable_web_page_preview=True)
 
-            # Auto-delete after specified duration if msg exists
             await asyncio.sleep(AUTO_DELETE_DURATION)
             await msg.delete()
 
     except Exception as e:
-        await searching_msg.delete()  # Ensure searching message is deleted in case of error
+        try:
+            await searching_msg.delete()
+        except:
+            pass  
+
         print(f"An error occurred: {e}")
         await message.reply_text(f"🚨 <b>Error!</b>\n\n⚠️ Something went wrong: <code>{e}</code>\n\nPlease try again later.", disable_web_page_preview=True)
 
@@ -137,7 +156,7 @@ async def recheck(bot, update):
                     best_match = get_best_match(query, [{"title": name, "link": msg.link}])
 
                     if best_match and best_match["title"] == name:
-                        results += f"🍿 <b>{best_match['title']}</b>\n🔗 <a href='{msg.link}'>📥 Download Here</a>\n\n"
+                        results += f"🍿 <strong>{best_match['title']}\n🔗 <a href='{msg.link}'>📥 Download Here</a></strong>\n\n"
                         seen_titles.add(name)
 
             except (ChannelPrivate, PeerIdInvalid, ChannelInvalid):
