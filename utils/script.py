@@ -15,9 +15,7 @@ class script(object):
 👉 Speed Is Greate ( Seraching Speed)
 👉 Deployeble in HEROKU , KOYEB, RENDER, VPS</blockquote>
 
-THIS BOT REPO ALSO SELL MSG TO BUY :- 
-
-💥 MORE BOTS :- @JN2FLIX
+💥 MORE BOTS :- @ROCKERS_BOTS
 💥 BACKUP CHANNEL :- @ROCKERSBACKUP"""
 
     HELP = """🫂 How To Connect And Use 🫂
@@ -34,9 +32,9 @@ THIS BOT REPO ALSO SELL MSG TO BUY :-
 🚀Step 4
 👉After verify add unlimited Channel  /connect -1004658687
 
-🫂 U still Not Understand Message Me @rockersjnbot</b>"""
+Join Bot Updates Channel @ROCKERS_BOTS</b>"""
 
-    ABOUT = """Powered By @ROCKERSBACKUP @JN2FLIX
+    ABOUT = """Powered By @ROCKERSBACKUP @ROCKERS_BOTS</b>
 
 ✯ Mʏ Nᴀᴍᴇ:  {}
 ✯ Lᴀɴɢᴜᴀɢᴇ: <a href='https://www.python.org'>Pʏᴛʜᴏɴ 3</a>
